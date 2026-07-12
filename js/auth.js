@@ -939,6 +939,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const mergedEvents = [...serverEvents];
                 localEvents.forEach(le => {
+                    if (le.origin === 'travel-planner') {
+                        mergedEvents.push(le);
+                        return;
+                    }
                     const onServer = serverEvents.some(se => se.id === le.id);
                     const wasSynced = lastSynced.some(lst => lst.id === le.id);
                     if (!onServer && !wasSynced) {
