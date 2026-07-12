@@ -67,6 +67,51 @@ document.addEventListener('DOMContentLoaded', () => {
     window.workoutSheets = JSON.parse(localStorage.getItem('hub-workout-sheets')) || defaultWorkoutSheets;
     window.activeSheetId = null;
 
+    // Stato di modifica esercizio
+    let editingExerciseId = null;
+    const btnWorkoutAddSubmit = document.getElementById('btn-workout-add-submit');
+    const btnCancelEditExercise = document.getElementById('btn-cancel-edit-exercise');
+
+    function resetWorkoutForm() {
+        editingExerciseId = null;
+        if (btnWorkoutAddSubmit) {
+            btnWorkoutAddSubmit.innerHTML = "+";
+            btnWorkoutAddSubmit.style.width = "44px";
+            btnWorkoutAddSubmit.style.fontSize = "1.4rem";
+        }
+        if (btnCancelEditExercise) {
+            btnCancelEditExercise.style.display = "none";
+        }
+        if (workoutAddExerciseForm) {
+            workoutAddExerciseForm.reset();
+        }
+    }
+
+    if (btnCancelEditExercise) {
+        btnCancelEditExercise.addEventListener('click', resetWorkoutForm);
+    }
+
+    function startEditingExercise(ex) {
+        editingExerciseId = ex.id;
+        inputExerciseName.value = ex.name;
+        inputExerciseSetsReps.value = ex.setsReps;
+        if (inputExerciseRest) inputExerciseRest.value = ex.rest || '';
+        if (inputExerciseLoad) inputExerciseLoad.value = ex.load || '';
+
+        if (btnWorkoutAddSubmit) {
+            btnWorkoutAddSubmit.innerHTML = "Salva";
+            btnWorkoutAddSubmit.style.width = "auto";
+            btnWorkoutAddSubmit.style.padding = "0 12px";
+            btnWorkoutAddSubmit.style.fontSize = "0.9rem";
+        }
+        if (btnCancelEditExercise) {
+            btnCancelEditExercise.style.display = "block";
+        }
+
+        // Fai scorrere il form in evidenza
+        workoutAddExerciseForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     // Seleziona la prima scheda all'avvio se presente
     if (window.workoutSheets.length > 0) {
         window.activeSheetId = window.workoutSheets[0].id;
@@ -187,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            activeSheet.exercises.forEach(ex => {
+            activeSheet.exercises.forEach((ex, idx) => {
                 const li = document.createElement('li');
                 li.className = "shopping-item";
                 li.innerHTML = `
@@ -201,9 +246,28 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                         </div>
                     </div>
-                    <div class="shopping-item-actions">
-                        <button class="btn-delete" data-id="${ex.id}" title="Elimina esercizio">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <div class="shopping-item-actions" style="display: flex; gap: 6px; align-items: center;">
+                        <!-- Riordino -->
+                        <button class="btn-move-up" title="Sposta su" style="background: transparent; border: none; padding: 4px; cursor: pointer; color: var(--text-secondary); opacity: ${idx === 0 ? 0.3 : 1};" ${idx === 0 ? 'disabled' : ''}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="18 15 12 9 6 15"></polyline>
+                            </svg>
+                        </button>
+                        <button class="btn-move-down" title="Sposta giù" style="background: transparent; border: none; padding: 4px; cursor: pointer; color: var(--text-secondary); opacity: ${idx === activeSheet.exercises.length - 1 ? 0.3 : 1};" ${idx === activeSheet.exercises.length - 1 ? 'disabled' : ''}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <!-- Modifica -->
+                        <button class="btn-edit" title="Modifica esercizio" style="background: transparent; border: none; padding: 4px; cursor: pointer; color: var(--text-secondary);">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 20h9"></path>
+                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                            </svg>
+                        </button>
+                        <!-- Elimina -->
+                        <button class="btn-delete" title="Elimina esercizio" style="background: rgba(255, 59, 48, 0.08); color: #ff3b30; border: none; padding: 6px; border-radius: 10px; cursor:pointer; display: flex; align-items: center; justify-content: center;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="3 6 5 6 21 6"></polyline>
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                             </svg>
@@ -211,8 +275,42 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `;
 
+                // Sposta su
+                const btnUp = li.querySelector('.btn-move-up');
+                if (btnUp && idx > 0) {
+                    btnUp.addEventListener('click', () => {
+                        const temp = activeSheet.exercises[idx];
+                        activeSheet.exercises[idx] = activeSheet.exercises[idx - 1];
+                        activeSheet.exercises[idx - 1] = temp;
+                        window.saveWorkouts();
+                        window.renderActiveWorkoutSheet();
+                    });
+                }
+
+                // Sposta giù
+                const btnDown = li.querySelector('.btn-move-down');
+                if (btnDown && idx < activeSheet.exercises.length - 1) {
+                    btnDown.addEventListener('click', () => {
+                        const temp = activeSheet.exercises[idx];
+                        activeSheet.exercises[idx] = activeSheet.exercises[idx + 1];
+                        activeSheet.exercises[idx + 1] = temp;
+                        window.saveWorkouts();
+                        window.renderActiveWorkoutSheet();
+                    });
+                }
+
+                // Modifica
+                li.querySelector('.btn-edit').addEventListener('click', () => {
+                    startEditingExercise(ex);
+                });
+
+                // Elimina
                 li.querySelector('.btn-delete').addEventListener('click', () => {
                     activeSheet.exercises = activeSheet.exercises.filter(e => e.id !== ex.id);
+                    // Se stavamo modificando proprio questo, resetta il form
+                    if (editingExerciseId === ex.id) {
+                        resetWorkoutForm();
+                    }
                     window.saveWorkouts();
                     window.renderActiveWorkoutSheet();
                 });
@@ -222,7 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Aggiunta esercizio
+    // Aggiunta o modifica esercizio
     if (workoutAddExerciseForm) {
         workoutAddExerciseForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -235,13 +333,26 @@ document.addEventListener('DOMContentLoaded', () => {
             const load = inputExerciseLoad ? inputExerciseLoad.value.trim() : '';
 
             if (name && setsReps) {
-                activeSheet.exercises.push({
-                    id: Date.now(),
-                    name: name,
-                    setsReps: setsReps,
-                    rest: rest,
-                    load: load
-                });
+                if (editingExerciseId !== null) {
+                    // Modalità Modifica
+                    const ex = activeSheet.exercises.find(e => e.id === editingExerciseId);
+                    if (ex) {
+                        ex.name = name;
+                        ex.setsReps = setsReps;
+                        ex.rest = rest;
+                        ex.load = load;
+                    }
+                    resetWorkoutForm();
+                } else {
+                    // Modalità Aggiunta
+                    activeSheet.exercises.push({
+                        id: Date.now(),
+                        name: name,
+                        setsReps: setsReps,
+                        rest: rest,
+                        load: load
+                    });
+                }
                 window.saveWorkouts();
 
                 inputExerciseName.value = '';
@@ -462,6 +573,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 if (!inputLoad.value) {
                                     inputLoad.value = inputLoad.placeholder;
                                 }
+                                // Avvia il timer di recupero basato su ex.rest
+                                if (ex.rest) {
+                                    startRecoveryTimer(ex.rest);
+                                }
                             }
                         });
                     });
@@ -569,5 +684,193 @@ document.addEventListener('DOMContentLoaded', () => {
 
             window.renderActiveWorkoutSheet();
         });
+    }
+
+    // =============================================
+    // GESTIONE TIMER DI RECUPERO FLOATING (PWA)
+    // =============================================
+    let timerInterval = null;
+
+    function parseDuration(str) {
+        if (!str) return 0;
+        const clean = str.toLowerCase().replace(/\s+/g, '');
+        let totalSeconds = 0;
+        
+        const minuteMatch = clean.match(/(\d+)(m|min)/);
+        if (minuteMatch) {
+            totalSeconds += parseInt(minuteMatch[1]) * 60;
+        }
+        
+        const secondMatch = clean.match(/(\d+)(s|sec)/);
+        if (secondMatch) {
+            totalSeconds += parseInt(secondMatch[1]);
+        } else if (!minuteMatch) {
+            const justNumber = clean.match(/^(\d+)$/);
+            if (justNumber) {
+                totalSeconds = parseInt(justNumber[1]);
+            }
+        }
+        return totalSeconds;
+    }
+
+    function startRecoveryTimer(durationStr) {
+        const seconds = parseDuration(durationStr);
+        if (seconds <= 0) return;
+
+        if (timerInterval) {
+            clearInterval(timerInterval);
+        }
+
+        let timerEl = document.getElementById('workout-recovery-timer');
+        if (!timerEl) {
+            timerEl = document.createElement('div');
+            timerEl.id = 'workout-recovery-timer';
+            timerEl.style.cssText = `
+                position: fixed;
+                bottom: 96px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: var(--glass-bg);
+                backdrop-filter: var(--glass-blur);
+                -webkit-backdrop-filter: var(--glass-blur);
+                border: 1px solid var(--glass-border);
+                border-radius: 30px;
+                padding: 10px 20px;
+                box-shadow: var(--shadow-soft);
+                z-index: 1200;
+                display: flex;
+                align-items: center;
+                gap: 14px;
+                color: var(--text-primary);
+                font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+                font-weight: 600;
+                font-size: 0.9rem;
+                pointer-events: auto;
+            `;
+            document.body.appendChild(timerEl);
+        } else {
+            timerEl.style.display = 'flex';
+        }
+
+        let remaining = seconds;
+
+        function updateDisplay() {
+            if (remaining <= 0) {
+                timerEl.innerHTML = `
+                    <span style="color: #34c759; display: flex; align-items: center; gap: 6px;">
+                        ✅ Fine Recupero! 🏋️‍♂️
+                    </span>
+                    <button id="btn-close-timer" style="
+                        background: rgba(0, 0, 0, 0.05);
+                        color: var(--text-primary);
+                        border: 1px solid var(--glass-border);
+                        padding: 4px 10px;
+                        border-radius: 15px;
+                        font-size: 0.75rem;
+                        font-weight: 700;
+                        cursor: pointer;
+                        outline: none;
+                        min-height: unset;
+                        min-width: unset;
+                    ">Chiudi</button>
+                `;
+                const btnClose = timerEl.querySelector('#btn-close-timer');
+                if (btnClose) {
+                    btnClose.addEventListener('click', stopTimer);
+                }
+            } else {
+                const mins = Math.floor(remaining / 60);
+                const secs = remaining % 60;
+                const timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                
+                timerEl.innerHTML = `
+                    <span style="display: flex; align-items: center; gap: 6px;">
+                        ⏱️ Recupero: <span style="color: var(--apple-blue); font-variant-numeric: tabular-nums;">${timeStr}</span>
+                    </span>
+                    <button id="btn-skip-timer" style="
+                        background: rgba(255, 59, 48, 0.08);
+                        color: #ff3b30;
+                        border: 1px solid rgba(255, 59, 48, 0.15);
+                        padding: 4px 10px;
+                        border-radius: 15px;
+                        font-size: 0.75rem;
+                        font-weight: 700;
+                        cursor: pointer;
+                        outline: none;
+                        min-height: unset;
+                        min-width: unset;
+                    ">Salta</button>
+                `;
+                const btnSkip = timerEl.querySelector('#btn-skip-timer');
+                if (btnSkip) {
+                    btnSkip.addEventListener('click', stopTimer);
+                }
+            }
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            if (timerEl) {
+                timerEl.style.display = 'none';
+            }
+        }
+
+        updateDisplay();
+
+        timerInterval = setInterval(() => {
+            remaining--;
+            if (remaining <= 0) {
+                updateDisplay();
+                clearInterval(timerInterval);
+                timerInterval = null;
+                
+                playBeepSound();
+                vibrateDevice();
+
+                setTimeout(() => {
+                    if (!timerInterval && timerEl) {
+                        timerEl.style.display = 'none';
+                    }
+                }, 4000);
+            } else {
+                updateDisplay();
+            }
+        }, 1000);
+    }
+
+    function playBeepSound() {
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            const ctx = new AudioContext();
+            const now = ctx.currentTime;
+            
+            for (let i = 0; i < 3; i++) {
+                const time = now + i * 0.25;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, time);
+                
+                gain.gain.setValueAtTime(0, time);
+                gain.gain.linearRampToValueAtTime(0.25, time + 0.04);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.18);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(time);
+                osc.stop(time + 0.18);
+            }
+        } catch (e) {
+            console.error("Audio error:", e);
+        }
+    }
+
+    function vibrateDevice() {
+        if (navigator.vibrate) {
+            navigator.vibrate([150, 100, 150]);
+        }
     }
 });
