@@ -58,10 +58,167 @@ document.addEventListener('DOMContentLoaded', () => {
     // Flag per evitare loop di salvataggio durante il caricamento dati
     let isSyncingSuspended = false;
 
-    // =============================================
-    // SUPABASE SESSION RECOVERY & STATE LISTENER
-    // =============================================
-    
+    // Gestione Eventi Realtime di Supabase Postgres Changes
+    function handleRealtimeChange(table, eventType, newRow, oldRow, userId) {
+        if (isSyncingSuspended) return;
+
+        const row = newRow || oldRow;
+        if (!row || row.user_id !== userId) return;
+
+        console.log(`Realtime change detected on table ${table}: ${eventType}`, row);
+
+        let localArrayName = '';
+        let lastSyncedArrayName = '';
+        let renderFnName = '';
+        let localStorageKey = '';
+        let mapFromDb = null;
+
+        if (table === 'tasks') {
+            localArrayName = 'tasks';
+            lastSyncedArrayName = 'lastSyncedTasks';
+            renderFnName = 'renderTasks';
+            localStorageKey = 'hub-tasks';
+            mapFromDb = (t) => ({ id: t.id, text: t.text, completed: t.completed });
+        } else if (table === 'events') {
+            localArrayName = 'events';
+            lastSyncedArrayName = 'lastSyncedEvents';
+            renderFnName = 'renderEvents';
+            localStorageKey = 'hub-events';
+            mapFromDb = (ev) => ({
+                id: ev.id,
+                title: ev.title,
+                time: ev.time,
+                endTime: ev.end_time,
+                date: ev.date,
+                endDate: ev.end_date,
+                allDay: ev.all_day,
+                linkedType: ev.linked_type,
+                linkedId: ev.linked_id,
+                notes: ev.notes || ''
+            });
+        } else if (table === 'shopping_lists') {
+            localArrayName = 'shoppingLists';
+            lastSyncedArrayName = 'lastSyncedShoppingLists';
+            renderFnName = 'renderShopping';
+            localStorageKey = 'hub-shopping-lists';
+            mapFromDb = (lst) => ({
+                id: lst.id,
+                name: lst.name,
+                date: lst.date,
+                archived: lst.archived,
+                items: lst.items
+            });
+        } else if (table === 'workout_sheets') {
+            localArrayName = 'workoutSheets';
+            lastSyncedArrayName = 'lastSyncedWorkoutSheets';
+            renderFnName = 'renderWorkoutSheets';
+            localStorageKey = 'hub-workout-sheets';
+            mapFromDb = (sheet) => ({
+                id: sheet.id,
+                name: sheet.name,
+                exercises: sheet.exercises
+            });
+        } else if (table === 'workout_logs') {
+            lastSyncedArrayName = 'lastSyncedWorkoutLogs';
+            renderFnName = 'renderWorkoutHistory';
+            localStorageKey = 'hub-workout-logs';
+            mapFromDb = (log) => ({
+                id: log.id,
+                timestamp: log.timestamp,
+                sheetId: log.sheet_id,
+                results: log.results
+            });
+        } else if (table === 'leisure_planner') {
+            lastSyncedArrayName = 'lastSyncedLeisurePlanner';
+            renderFnName = 'renderTrips';
+            localStorageKey = 'hub-leisure-data';
+            mapFromDb = (trip) => ({
+                id: trip.id,
+                destination: trip.destination || "Viaggio",
+                startDate: trip.start_date || new Date().toISOString().split('T')[0],
+                endDate: trip.end_date || trip.start_date || new Date().toISOString().split('T')[0],
+                itinerary: trip.itinerary || [],
+                documents: trip.documents || [],
+                luggage: trip.luggage || [],
+                expenses: trip.expenses || []
+            });
+        }
+
+        if (!localStorageKey) return;
+
+        let currentLocal = [];
+        if (localArrayName) {
+            currentLocal = window[localArrayName] || [];
+        } else if (table === 'workout_logs') {
+            currentLocal = JSON.parse(localStorage.getItem('hub-workout-logs')) || [];
+        } else if (table === 'leisure_planner') {
+            const localData = JSON.parse(localStorage.getItem('hub-leisure-data')) || { trips: [] };
+            currentLocal = localData.trips || [];
+        }
+
+        const mappedItem = mapFromDb(row);
+        let changed = false;
+
+        if (eventType === 'INSERT' || eventType === 'UPDATE') {
+            const idx = currentLocal.findIndex(item => item.id === mappedItem.id);
+            if (idx === -1) {
+                currentLocal.push(mappedItem);
+                changed = true;
+            } else {
+                const localItemStr = JSON.stringify(currentLocal[idx]);
+                const serverItemStr = JSON.stringify(mappedItem);
+                if (localItemStr !== serverItemStr) {
+                    currentLocal[idx] = mappedItem;
+                    changed = true;
+                }
+            }
+        } else if (eventType === 'DELETE') {
+            const idx = currentLocal.findIndex(item => item.id === mappedItem.id);
+            if (idx !== -1) {
+                currentLocal.splice(idx, 1);
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            console.log(`Aggiornamento locale per ${table} a seguito di evento realtime.`);
+            isSyncingSuspended = true;
+
+            if (localArrayName) {
+                window[localArrayName] = currentLocal;
+                window[lastSyncedArrayName] = JSON.parse(JSON.stringify(currentLocal));
+                localStorage.setItem(localStorageKey, JSON.stringify(currentLocal));
+            } else if (table === 'workout_logs') {
+                window[lastSyncedArrayName] = JSON.parse(JSON.stringify(currentLocal));
+                localStorage.setItem('hub-workout-logs', JSON.stringify(currentLocal));
+            } else if (table === 'leisure_planner') {
+                window[lastSyncedArrayName] = JSON.parse(JSON.stringify(currentLocal));
+                localStorage.setItem('hub-leisure-data', JSON.stringify({ trips: currentLocal }));
+            }
+
+            if (typeof window[renderFnName] === 'function') {
+                window[renderFnName]();
+            }
+
+            if (table === 'workout_sheets') {
+                if (window.workoutSheets.length > 0 && !window.workoutSheets.some(s => s.id === window.activeSheetId)) {
+                    window.activeSheetId = window.workoutSheets[0].id;
+                }
+                if (typeof window.renderActiveWorkoutSheet === 'function') {
+                    window.renderActiveWorkoutSheet();
+                }
+            }
+
+            if (table === 'leisure_planner') {
+                if (typeof window.syncLeisureToCalendar === 'function') {
+                    window.syncLeisureToCalendar();
+                }
+            }
+
+            isSyncingSuspended = false;
+        }
+    }
+
     // Funzione di successo login Supabase
     function loginSuccessSupabase(session) {
         const email = session.user.email;
@@ -79,6 +236,31 @@ document.addEventListener('DOMContentLoaded', () => {
         // Ricarica le preferenze profilo aggiornate
         if (typeof window.loadSettings === 'function') {
             window.loadSettings();
+        }
+
+        // Gestione Canale Realtime (Disiscrizione dal precedente se attivo)
+        if (window.realtimeChannel && supabase) {
+            supabase.removeChannel(window.realtimeChannel);
+            window.realtimeChannel = null;
+        }
+
+        // Configurazione Sottoscrizione Realtime
+        if (!useMockAuth && supabase) {
+            window.realtimeChannel = supabase
+                .channel('db-changes-hub')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public'
+                    },
+                    (payload) => {
+                        handleRealtimeChange(payload.table, payload.eventType, payload.new, payload.old, userId);
+                    }
+                )
+                .subscribe((status) => {
+                    console.log(`Stato iscrizione canale realtime: ${status}`);
+                });
         }
 
         // Scarica i dati dell'utente dal Cloud Supabase
@@ -146,6 +328,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (event === 'SIGNED_IN' && session && session.user) {
                 loginSuccessSupabase(session);
             } else if (event === 'SIGNED_OUT') {
+                if (window.realtimeChannel) {
+                    supabase.removeChannel(window.realtimeChannel);
+                    window.realtimeChannel = null;
+                }
                 localStorage.setItem('hub-session-active', 'false');
                 localStorage.removeItem('hub-user-email');
                 localStorage.removeItem('hub-onboarding-completed');
