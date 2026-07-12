@@ -125,6 +125,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Salva in LocalStorage
         localStorage.setItem('hub-events', JSON.stringify(window.events));
+        if (typeof window.syncData === 'function') {
+            window.syncData('events');
+        }
 
         // Ricarica le viste
         if (typeof window.renderEvents === 'function') window.renderEvents();

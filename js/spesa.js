@@ -74,6 +74,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }];
         }
         localStorage.setItem('hub-shopping-lists', JSON.stringify(window.shoppingLists));
+        if (typeof window.syncData === 'function') {
+            window.syncData('shopping_lists');
+        }
     }
 
     let currentShoppingFilter = 'all';
@@ -248,6 +251,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Salva su LocalStorage
         localStorage.setItem('hub-shopping-lists', JSON.stringify(window.shoppingLists));
+        if (typeof window.syncData === 'function') {
+            window.syncData('shopping_lists');
+        }
 
         // Rendi sincrono il widget in home page
         window.renderShoppingWidget();
@@ -562,6 +568,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (confirm("Eliminare definitivamente questa lista della spesa?")) {
                     window.shoppingLists = window.shoppingLists.filter(list => list.id !== id);
                     localStorage.setItem('hub-shopping-lists', JSON.stringify(window.shoppingLists));
+                    if (typeof window.syncData === 'function') {
+                        window.syncData('shopping_lists');
+                    }
                     renderHistory();
                     window.renderShoppingWidget();
                 }

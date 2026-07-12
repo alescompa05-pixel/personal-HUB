@@ -123,6 +123,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.saveWorkouts = function() {
         localStorage.setItem('hub-workout-sheets', JSON.stringify(window.workoutSheets));
+        if (typeof window.syncData === 'function') {
+            window.syncData('workout_sheets');
+        }
     }
 
     window.renderWorkoutSheets = function() {
