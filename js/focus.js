@@ -288,7 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (event.linkedType === 'spesa' && event.linkedId) {
                     window.shoppingLists.forEach(list => list.archived = (list.id !== event.linkedId));
-                    if (typeof window.syncData === 'function') window.syncData('shopping_lists');
+                    localStorage.setItem('hub-shopping-lists', JSON.stringify(window.shoppingLists));
                     if (typeof window.renderShopping === 'function') {
                         window.renderShopping();
                     }

@@ -194,6 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 window.shoppingLists.push(newList);
+                localStorage.setItem('hub-shopping-lists', JSON.stringify(window.shoppingLists));
 
                 if (typeof window.syncData === 'function') {
                     window.syncData('shopping_lists', 'upsert', newList);
@@ -226,6 +227,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!window.workoutSheets) window.workoutSheets = [];
                 window.workoutSheets.push(newSheet);
                 window.activeSheetId = newSheet.id;
+
+                localStorage.setItem('hub-workout-sheets', JSON.stringify(window.workoutSheets));
 
                 if (typeof window.syncData === 'function') {
                     window.syncData('workout_sheets', 'upsert', newSheet);

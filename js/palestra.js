@@ -68,11 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     ];
 
-    // window.workoutSheets è già inizializzato come array vuoto in settings.js.
-    // Viene popolato da Supabase al login. In modalità mock usa i default in-memory.
-    if (!window.workoutSheets || window.workoutSheets.length === 0) {
-        window.workoutSheets = defaultWorkoutSheets;
-    }
+    window.workoutSheets = JSON.parse(localStorage.getItem('hub-workout-sheets')) || defaultWorkoutSheets;
     window.activeSheetId = null;
 
     // Stato di modifica esercizio
@@ -126,8 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.saveWorkouts = function() {
-        // La persistenza avviene tramite Supabase. Aggiorniamo window.workoutSheets in-memory.
-        if (typeof window.syncData === 'function') window.syncData('workout_sheets');
+        localStorage.setItem('hub-workout-sheets', JSON.stringify(window.workoutSheets));
     }
 
     window.renderWorkoutSheets = function() {
@@ -488,17 +483,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Database dei Log storici degli allenamenti (in-memory, fonte di verità Supabase)
-    // Esposto come window.workoutLogs per permettere a auth.js di accedervi per il sync
-    if (!window.workoutLogs) window.workoutLogs = [];
-    // Alias locale per mantenere la compatibilità con il codice esistente
-    Object.defineProperty(window, '_workoutLogsProxy', {
-        get: () => window.workoutLogs,
-        set: (v) => { window.workoutLogs = v; },
-        configurable: true
-    });
-    // Helper: let workoutLogs punta a window.workoutLogs attraverso un getter/setter
-    // Per semplicità usiamo direttamente window.workoutLogs nel codice seguente
+    // Database dei Log storici degli allenamenti
+    let workoutLogs = JSON.parse(localStorage.getItem('hub-workout-logs')) || [];
 
     // Helper per determinare il numero di serie da una stringa tipo "4x8"
     function parseSets(setsRepsStr) {
@@ -690,7 +676,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Salva log storico
-            window.workoutLogs.push(logEntry);
+            workoutLogs.push(logEntry);
+            localStorage.setItem('hub-workout-logs', JSON.stringify(workoutLogs));
 
             if (typeof window.syncData === 'function') {
                 window.syncData('workout_logs');
@@ -893,8 +880,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!workoutHistoryList) return;
         workoutHistoryList.innerHTML = '';
 
-        // Usa i log in-memory (aggiornati da Supabase)
-        const workoutLogs = window.workoutLogs || [];
+        // Ricarica lo storico aggiornato
+        workoutLogs = JSON.parse(localStorage.getItem('hub-workout-logs')) || [];
 
         if (workoutLogs.length === 0) {
             workoutHistoryList.innerHTML = `
@@ -1037,7 +1024,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btnDeleteLog) {
             btnDeleteLog.addEventListener('click', () => {
                 if (confirm("Sei sicuro di voler eliminare questa sessione dall'archivio storico?")) {
-                    window.workoutLogs = window.workoutLogs.filter(l => l.id !== log.id);
+                    workoutLogs = workoutLogs.filter(l => l.id !== log.id);
+                    localStorage.setItem('hub-workout-logs', JSON.stringify(workoutLogs));
                     
                     if (typeof window.syncData === 'function') {
                         window.syncData('workout_logs', 'delete', log);
