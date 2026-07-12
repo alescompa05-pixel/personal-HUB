@@ -17,12 +17,63 @@ document.addEventListener('DOMContentLoaded', () => {
     const focusStatisticsContainer = document.getElementById('focus-statistics-container');
     const focusPendingTasksList = document.getElementById('focus-pending-tasks-list');
 
-    window.initFocusPage = function() {
+    // Nuovi controlli data per la timeline
+    let focusSelectedDate = new Date().toISOString().split('T')[0];
+    const btnFocusPrevDay = document.getElementById('btn-focus-prev-day');
+    const btnFocusNextDay = document.getElementById('btn-focus-next-day');
+    const btnFocusCalendar = document.getElementById('btn-focus-calendar');
+    const focusDatePicker = document.getElementById('focus-date-picker');
+
+    function updateFocusPageForDate() {
         if (focusTodayDateLabel) {
             const options = { weekday: 'long', day: 'numeric', month: 'long' };
-            const dataStr = new Date().toLocaleDateString('it-IT', options);
+            const dateObj = new Date(focusSelectedDate + 'T00:00:00');
+            const dataStr = dateObj.toLocaleDateString('it-IT', options);
             focusTodayDateLabel.textContent = dataStr.charAt(0).toUpperCase() + dataStr.slice(1);
         }
+        if (focusDatePicker) {
+            focusDatePicker.value = focusSelectedDate;
+        }
+        updateFocusLiveLine();
+        window.renderFocusTimelineBlocks();
+        renderFocusStatistics();
+    }
+
+    if (btnFocusPrevDay) {
+        btnFocusPrevDay.addEventListener('click', () => {
+            const d = new Date(focusSelectedDate + 'T00:00:00');
+            d.setDate(d.getDate() - 1);
+            focusSelectedDate = d.toISOString().split('T')[0];
+            updateFocusPageForDate();
+        });
+    }
+
+    if (btnFocusNextDay) {
+        btnFocusNextDay.addEventListener('click', () => {
+            const d = new Date(focusSelectedDate + 'T00:00:00');
+            d.setDate(d.getDate() + 1);
+            focusSelectedDate = d.toISOString().split('T')[0];
+            updateFocusPageForDate();
+        });
+    }
+
+    if (btnFocusCalendar && focusDatePicker) {
+        btnFocusCalendar.addEventListener('click', () => {
+            focusDatePicker.showPicker ? focusDatePicker.showPicker() : focusDatePicker.click();
+        });
+        
+        focusDatePicker.addEventListener('change', (e) => {
+            if (e.target.value) {
+                focusSelectedDate = e.target.value;
+                updateFocusPageForDate();
+            }
+        });
+    }
+
+    window.initFocusPage = function() {
+        // Ripristina la data odierna all'apertura principale della sezione
+        focusSelectedDate = new Date().toISOString().split('T')[0];
+        updateFocusPageForDate();
 
         const now = new Date();
         const curH = now.getHours();
@@ -35,9 +86,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         renderTimelineGrid();
-        updateFocusLiveLine();
-        window.renderFocusTimelineBlocks();
-        renderFocusStatistics();
         window.renderFocusPendingTasks();
         populateFocusConditionalSelects();
     }
@@ -57,6 +105,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateFocusLiveLine() {
         if (!focusLiveLine) return;
         const now = new Date();
+        const curDateStr = now.toISOString().split('T')[0];
+        
+        if (curDateStr !== focusSelectedDate) {
+            focusLiveLine.style.display = 'none';
+            return;
+        }
+
         const h = now.getHours();
         const m = now.getMinutes();
         if (h >= 7 && h < 23) {
@@ -130,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!focusBlocksContainer) return;
         focusBlocksContainer.innerHTML = '';
 
-        const todayStr = new Date().toISOString().split('T')[0];
+        const todayStr = focusSelectedDate;
         const todayEvents = window.events.filter(ev => todayStr >= ev.date && todayStr <= (ev.endDate || ev.date) && !ev.allDay && ev.time);
 
         todayEvents.forEach(event => {
@@ -273,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!focusStatisticsContainer) return;
         focusStatisticsContainer.innerHTML = '';
 
-        const todayStr = new Date().toISOString().split('T')[0];
+        const todayStr = focusSelectedDate;
         const todayEvents = window.events.filter(ev => todayStr >= ev.date && todayStr <= (ev.endDate || ev.date) && !ev.allDay && ev.time);
 
         const stats = {
@@ -492,7 +547,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         title: title,
                         time: startVal,
                         endTime: endVal,
-                        date: new Date().toISOString().split('T')[0],
+                        date: focusSelectedDate,
                         linkedType: linkedType,
                         linkedId: linkedId,
                         allDay: false

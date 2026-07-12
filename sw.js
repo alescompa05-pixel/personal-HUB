@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hub-personale-v6';
+const CACHE_NAME = 'hub-personale-v7';
 const ASSETS = [
   './',
   './index.html',

@@ -694,12 +694,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     completed: t.completed
                 }));
                 const localTasks = JSON.parse(localStorage.getItem('hub-tasks')) || [];
-                const mergedTasks = [...localTasks];
-                serverTasks.forEach(st => {
-                    if (!mergedTasks.some(lt => lt.id === st.id)) {
-                        mergedTasks.push(st);
+                const lastSynced = window.lastSyncedTasks || [];
+                
+                const mergedTasks = [...serverTasks];
+                localTasks.forEach(lt => {
+                    const onServer = serverTasks.some(st => st.id === lt.id);
+                    const wasSynced = lastSynced.some(lst => lst.id === lt.id);
+                    if (!onServer && !wasSynced) {
+                        mergedTasks.push(lt);
                     }
                 });
+                
                 window.tasks = mergedTasks;
                 window.lastSyncedTasks = JSON.parse(JSON.stringify(window.tasks));
                 localStorage.setItem('hub-tasks', JSON.stringify(window.tasks));
@@ -726,12 +731,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     linkedId: ev.linked_id
                 }));
                 const localEvents = JSON.parse(localStorage.getItem('hub-events')) || [];
-                const mergedEvents = [...localEvents];
-                serverEvents.forEach(se => {
-                    if (!mergedEvents.some(le => le.id === se.id)) {
-                        mergedEvents.push(se);
+                const lastSynced = window.lastSyncedEvents || [];
+                
+                const mergedEvents = [...serverEvents];
+                localEvents.forEach(le => {
+                    const onServer = serverEvents.some(se => se.id === le.id);
+                    const wasSynced = lastSynced.some(lst => lst.id === le.id);
+                    if (!onServer && !wasSynced) {
+                        mergedEvents.push(le);
                     }
                 });
+                
                 window.events = mergedEvents;
                 window.lastSyncedEvents = JSON.parse(JSON.stringify(window.events));
                 localStorage.setItem('hub-events', JSON.stringify(window.events));
@@ -754,12 +764,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     items: lst.items
                 }));
                 const localShopping = JSON.parse(localStorage.getItem('hub-shopping-lists')) || [];
-                const mergedShopping = [...localShopping];
-                serverShopping.forEach(ss => {
-                    if (!mergedShopping.some(ls => ls.id === ss.id)) {
-                        mergedShopping.push(ss);
+                const lastSynced = window.lastSyncedShoppingLists || [];
+                
+                const mergedShopping = [...serverShopping];
+                localShopping.forEach(ls => {
+                    const onServer = serverShopping.some(ss => ss.id === ls.id);
+                    const wasSynced = lastSynced.some(lst => lst.id === ls.id);
+                    if (!onServer && !wasSynced) {
+                        mergedShopping.push(ls);
                     }
                 });
+                
                 window.shoppingLists = mergedShopping;
                 window.lastSyncedShoppingLists = JSON.parse(JSON.stringify(window.shoppingLists));
                 localStorage.setItem('hub-shopping-lists', JSON.stringify(window.shoppingLists));
@@ -780,12 +795,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     exercises: sheet.exercises
                 }));
                 const localWorkout = JSON.parse(localStorage.getItem('hub-workout-sheets')) || [];
-                const mergedWorkout = [...localWorkout];
-                serverWorkout.forEach(sw => {
-                    if (!mergedWorkout.some(lw => lw.id === sw.id)) {
-                        mergedWorkout.push(sw);
+                const lastSynced = window.lastSyncedWorkoutSheets || [];
+                
+                const mergedWorkout = [...serverWorkout];
+                localWorkout.forEach(lw => {
+                    const onServer = serverWorkout.some(sw => sw.id === lw.id);
+                    const wasSynced = lastSynced.some(lst => lst.id === lw.id);
+                    if (!onServer && !wasSynced) {
+                        mergedWorkout.push(lw);
                     }
                 });
+                
                 window.workoutSheets = mergedWorkout;
                 window.lastSyncedWorkoutSheets = JSON.parse(JSON.stringify(window.workoutSheets));
                 localStorage.setItem('hub-workout-sheets', JSON.stringify(window.workoutSheets));
@@ -812,12 +832,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         results: log.results
                     }));
                     const localWorkoutLogs = JSON.parse(localStorage.getItem('hub-workout-logs')) || [];
-                    const mergedWorkoutLogs = [...localWorkoutLogs];
-                    serverWorkoutLogs.forEach(sl => {
-                        if (!mergedWorkoutLogs.some(ll => ll.id === sl.id)) {
-                            mergedWorkoutLogs.push(sl);
+                    const lastSynced = window.lastSyncedWorkoutLogs || [];
+                    
+                    const mergedWorkoutLogs = [...serverWorkoutLogs];
+                    localWorkoutLogs.forEach(ll => {
+                        const onServer = serverWorkoutLogs.some(sl => sl.id === ll.id);
+                        const wasSynced = lastSynced.some(lst => lst.id === ll.id);
+                        if (!onServer && !wasSynced) {
+                            mergedWorkoutLogs.push(ll);
                         }
                     });
+                    
                     window.lastSyncedWorkoutLogs = JSON.parse(JSON.stringify(mergedWorkoutLogs));
                     localStorage.setItem('hub-workout-logs', JSON.stringify(mergedWorkoutLogs));
                     if (typeof window.renderWorkoutHistory === 'function') window.renderWorkoutHistory();
@@ -847,16 +872,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     }));
                     const localData = JSON.parse(localStorage.getItem('hub-leisure-data')) || { trips: [] };
                     const localTrips = localData.trips || [];
-                    const mergedTrips = [...localTrips];
-                    serverTrips.forEach(st => {
-                        const existingIdx = mergedTrips.findIndex(lt => lt.id === st.id);
-                        if (existingIdx === -1) {
-                            mergedTrips.push(st);
-                        } else {
-                            // Se presente in entrambi, prediligi il server
-                            mergedTrips[existingIdx] = st;
+                    const lastSynced = window.lastSyncedLeisurePlanner || [];
+                    
+                    const mergedTrips = [...serverTrips];
+                    localTrips.forEach(lt => {
+                        const onServer = serverTrips.some(st => st.id === lt.id);
+                        const wasSynced = lastSynced.some(lst => lst.id === lt.id);
+                        if (!onServer && !wasSynced) {
+                            mergedTrips.push(lt);
                         }
                     });
+                    
                     window.lastSyncedLeisurePlanner = JSON.parse(JSON.stringify(mergedTrips));
                     localStorage.setItem('hub-leisure-data', JSON.stringify({ trips: mergedTrips }));
                     if (typeof window.renderTrips === 'function') window.renderTrips();

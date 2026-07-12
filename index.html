@@ -608,10 +608,23 @@
                 Indietro
             </button>
             
-            <div class="shopping-page-header">
-                <h2>Giornata Focus</h2>
-                <div style="font-size: 0.95rem; font-weight: 550; color: var(--text-secondary);" id="focus-today-date-label">
-                    Sabato 11 Luglio
+            <div class="shopping-page-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+                <div>
+                    <h2>Giornata Focus</h2>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                        <button id="btn-focus-prev-day" class="btn-icon-subtle" title="Giorno precedente" style="background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-primary); cursor: pointer; padding: 6px 10px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 600;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        </button>
+                        <span id="focus-today-date-label" style="font-size: 0.95rem; font-weight: 600; color: var(--text-secondary); min-width: 140px; text-align: center;">Caricamento...</span>
+                        <button id="btn-focus-next-day" class="btn-icon-subtle" title="Giorno successivo" style="background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-primary); cursor: pointer; padding: 6px 10px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 600;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </button>
+                        
+                        <input type="date" id="focus-date-picker" style="opacity: 0; width: 0; height: 0; position: absolute; pointer-events: none;">
+                        <button id="btn-focus-calendar" class="btn-icon-subtle" title="Seleziona data" style="background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-primary); cursor: pointer; padding: 6px 10px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 600;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        </button>
+                    </div>
                 </div>
             </div>
 
