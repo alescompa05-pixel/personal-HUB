@@ -263,6 +263,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
         }
 
+        // Configura intervallo di polling periodico come fallback per aggiornamenti
+        if (window.syncInterval) {
+            clearInterval(window.syncInterval);
+        }
+        window.syncInterval = setInterval(() => {
+            if (!isSyncingSuspended && typeof window.loadUserDataFromServer === 'function') {
+                window.loadUserDataFromServer(userId);
+            }
+        }, 10000); // Polling ogni 10 secondi
+
         // Scarica i dati dell'utente dal Cloud Supabase
         window.loadUserDataFromServer(userId);
 
@@ -331,6 +341,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (window.realtimeChannel) {
                     supabase.removeChannel(window.realtimeChannel);
                     window.realtimeChannel = null;
+                }
+                if (window.syncInterval) {
+                    clearInterval(window.syncInterval);
+                    window.syncInterval = null;
                 }
                 localStorage.setItem('hub-session-active', 'false');
                 localStorage.removeItem('hub-user-email');
@@ -892,10 +906,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
                 
-                window.tasks = mergedTasks;
-                window.lastSyncedTasks = JSON.parse(JSON.stringify(window.tasks));
-                localStorage.setItem('hub-tasks', JSON.stringify(window.tasks));
-                if (typeof window.renderTasks === 'function') window.renderTasks();
+                if (JSON.stringify(window.tasks) !== JSON.stringify(mergedTasks)) {
+                    window.tasks = mergedTasks;
+                    window.lastSyncedTasks = JSON.parse(JSON.stringify(window.tasks));
+                    localStorage.setItem('hub-tasks', JSON.stringify(window.tasks));
+                    if (typeof window.renderTasks === 'function') window.renderTasks();
+                }
             }
 
             // Carica Eventi
@@ -930,10 +946,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
                 
-                window.events = mergedEvents;
-                window.lastSyncedEvents = JSON.parse(JSON.stringify(window.events));
-                localStorage.setItem('hub-events', JSON.stringify(window.events));
-                if (typeof window.renderEvents === 'function') window.renderEvents();
+                if (JSON.stringify(window.events) !== JSON.stringify(mergedEvents)) {
+                    window.events = mergedEvents;
+                    window.lastSyncedEvents = JSON.parse(JSON.stringify(window.events));
+                    localStorage.setItem('hub-events', JSON.stringify(window.events));
+                    if (typeof window.renderEvents === 'function') window.renderEvents();
+                }
             }
 
             // Carica Liste Spesa
@@ -963,10 +981,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
                 
-                window.shoppingLists = mergedShopping;
-                window.lastSyncedShoppingLists = JSON.parse(JSON.stringify(window.shoppingLists));
-                localStorage.setItem('hub-shopping-lists', JSON.stringify(window.shoppingLists));
-                if (typeof window.renderShopping === 'function') window.renderShopping();
+                if (JSON.stringify(window.shoppingLists) !== JSON.stringify(mergedShopping)) {
+                    window.shoppingLists = mergedShopping;
+                    window.lastSyncedShoppingLists = JSON.parse(JSON.stringify(window.shoppingLists));
+                    localStorage.setItem('hub-shopping-lists', JSON.stringify(window.shoppingLists));
+                    if (typeof window.renderShopping === 'function') window.renderShopping();
+                }
             }
 
             // Carica Schede Palestra
@@ -994,14 +1014,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
                 
-                window.workoutSheets = mergedWorkout;
-                window.lastSyncedWorkoutSheets = JSON.parse(JSON.stringify(window.workoutSheets));
-                localStorage.setItem('hub-workout-sheets', JSON.stringify(window.workoutSheets));
-                if (window.workoutSheets.length > 0) {
-                    window.activeSheetId = window.workoutSheets[0].id;
+                if (JSON.stringify(window.workoutSheets) !== JSON.stringify(mergedWorkout)) {
+                    window.workoutSheets = mergedWorkout;
+                    window.lastSyncedWorkoutSheets = JSON.parse(JSON.stringify(window.workoutSheets));
+                    localStorage.setItem('hub-workout-sheets', JSON.stringify(window.workoutSheets));
+                    if (window.workoutSheets.length > 0 && !window.workoutSheets.some(s => s.id === window.activeSheetId)) {
+                        window.activeSheetId = window.workoutSheets[0].id;
+                    }
+                    if (typeof window.renderWorkoutSheets === 'function') window.renderWorkoutSheets();
+                    if (typeof window.renderActiveWorkoutSheet === 'function') window.renderActiveWorkoutSheet();
                 }
-                if (typeof window.renderWorkoutSheets === 'function') window.renderWorkoutSheets();
-                if (typeof window.renderActiveWorkoutSheet === 'function') window.renderActiveWorkoutSheet();
             }
 
             // Carica Storico Allenamenti
@@ -1031,9 +1053,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     });
                     
-                    window.lastSyncedWorkoutLogs = JSON.parse(JSON.stringify(mergedWorkoutLogs));
-                    localStorage.setItem('hub-workout-logs', JSON.stringify(mergedWorkoutLogs));
-                    if (typeof window.renderWorkoutHistory === 'function') window.renderWorkoutHistory();
+                    const currentLocalLogs = JSON.parse(localStorage.getItem('hub-workout-logs')) || [];
+                    if (JSON.stringify(currentLocalLogs) !== JSON.stringify(mergedWorkoutLogs)) {
+                        window.lastSyncedWorkoutLogs = JSON.parse(JSON.stringify(mergedWorkoutLogs));
+                        localStorage.setItem('hub-workout-logs', JSON.stringify(mergedWorkoutLogs));
+                        if (typeof window.renderWorkoutHistory === 'function') window.renderWorkoutHistory();
+                    }
                 }
             } catch (historyErr) {
                 console.warn("Tabella workout_logs non trovata o non accessibile in Supabase:", historyErr.message || historyErr);
@@ -1071,11 +1096,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     });
                     
-                    window.lastSyncedLeisurePlanner = JSON.parse(JSON.stringify(mergedTrips));
-                    localStorage.setItem('hub-leisure-data', JSON.stringify({ trips: mergedTrips }));
-                    if (typeof window.renderTrips === 'function') window.renderTrips();
-                    if (typeof window.syncLeisureToCalendar === 'function') {
-                        window.syncLeisureToCalendar();
+                    if (JSON.stringify(localTrips) !== JSON.stringify(mergedTrips)) {
+                        window.lastSyncedLeisurePlanner = JSON.parse(JSON.stringify(mergedTrips));
+                        localStorage.setItem('hub-leisure-data', JSON.stringify({ trips: mergedTrips }));
+                        if (typeof window.renderTrips === 'function') window.renderTrips();
+                        if (typeof window.syncLeisureToCalendar === 'function') {
+                            window.syncLeisureToCalendar();
+                        }
                     }
                 }
             } catch (leisureErr) {
