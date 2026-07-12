@@ -311,6 +311,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         await supabase.from('shopping_lists').delete().eq('user_id', userId);
                         await supabase.from('workout_sheets').delete().eq('user_id', userId);
 
+                        // Invia la richiesta di cancellazione al database per innescare il trigger di cancellazione auth
+                        try {
+                            await supabase.from('delete_user_requests').insert({ id: userId });
+                        } catch (eDelete) {
+                            console.error("Errore durante l'invio della richiesta di rimozione account:", eDelete.message);
+                        }
+
                         isSyncingSuspended = false;
                         
                         // 2. Disconnetti l'utente
