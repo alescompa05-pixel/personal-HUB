@@ -475,9 +475,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return {
                 id: payload.id,
                 user_id: userId,
-                destination: payload.destination,
-                start_date: payload.startDate,
-                end_date: payload.endDate,
+                destination: payload.destination || "Viaggio",
+                start_date: payload.startDate || new Date().toISOString().split('T')[0],
+                end_date: payload.endDate || payload.startDate || new Date().toISOString().split('T')[0],
                 itinerary: payload.itinerary || [],
                 documents: payload.documents || [],
                 luggage: payload.luggage || [],
@@ -819,9 +819,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (dbLeisure) {
                     const serverTrips = dbLeisure.map(trip => ({
                         id: trip.id,
-                        destination: trip.destination,
-                        startDate: trip.start_date,
-                        endDate: trip.end_date,
+                        destination: trip.destination || "Viaggio",
+                        startDate: trip.start_date || new Date().toISOString().split('T')[0],
+                        endDate: trip.end_date || trip.start_date || new Date().toISOString().split('T')[0],
                         itinerary: trip.itinerary || [],
                         documents: trip.documents || [],
                         luggage: trip.luggage || [],
