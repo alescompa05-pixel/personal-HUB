@@ -57,6 +57,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // Struttura iniziale vuota (senza dati d'esempio)
     let leisureData = JSON.parse(localStorage.getItem('hub-leisure-data')) || { trips: [] };
 
+    // Sanitizzazione: assicura che tutti i viaggi locali abbiano un ID valido
+    if (leisureData.trips && Array.isArray(leisureData.trips)) {
+        let changed = false;
+        leisureData.trips.forEach(trip => {
+            if (!trip.id) {
+                trip.id = crypto.randomUUID ? crypto.randomUUID() : 'trip-' + Date.now() + Math.random().toString(36).substr(2, 9);
+                changed = true;
+            }
+        });
+        if (changed) {
+            localStorage.setItem('hub-leisure-data', JSON.stringify(leisureData));
+        }
+    }
+
     function saveLeisureData() {
         localStorage.setItem('hub-leisure-data', JSON.stringify(leisureData));
         syncLeisureToCalendar();
