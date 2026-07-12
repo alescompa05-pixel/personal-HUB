@@ -208,9 +208,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const activeCount = window.tasks.length - completed;
         if (tasksCountDisplay) tasksCountDisplay.textContent = activeCount;
 
-        // Persistenza
-        localStorage.setItem('hub-tasks', JSON.stringify(window.tasks));
-
         // Aggiorna anche la vista focus se attiva
         if (typeof window.renderFocusPendingTasks === 'function') {
             window.renderFocusPendingTasks();
@@ -273,7 +270,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.shoppingLists.forEach(list => {
                     list.archived = (list.id !== id);
                 });
-                localStorage.setItem('hub-shopping-lists', JSON.stringify(window.shoppingLists));
                 if (typeof window.renderShopping === 'function') window.renderShopping();
                 window.switchPage('spesa');
             } else if (type === 'palestra') {
@@ -388,9 +384,6 @@ document.addEventListener('DOMContentLoaded', () => {
             eventsCountDisplay.textContent = todayEvents.length;
         }
 
-        // Persistenza
-        localStorage.setItem('hub-events', JSON.stringify(window.events));
-        
         // Rerender calendario e focus se siamo sulla pagina per riflettere le modifiche
         const calPage = document.getElementById('calendario');
         if (calPage && calPage.classList.contains('active')) {

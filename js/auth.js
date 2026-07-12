@@ -25,12 +25,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Variabili globali per tracciare lo stato sincronizzato cloud
-    window.lastSyncedTasks = JSON.parse(JSON.stringify(window.tasks || []));
-    window.lastSyncedEvents = JSON.parse(JSON.stringify(window.events || []));
-    window.lastSyncedShoppingLists = JSON.parse(JSON.stringify(window.shoppingLists || []));
-    window.lastSyncedWorkoutSheets = JSON.parse(JSON.stringify(window.workoutSheets || []));
-    window.lastSyncedWorkoutLogs = JSON.parse(JSON.stringify(JSON.parse(localStorage.getItem('hub-workout-logs')) || []));
-    window.lastSyncedLeisurePlanner = JSON.parse(JSON.stringify((JSON.parse(localStorage.getItem('hub-leisure-data')) || { trips: [] }).trips || []));
+    // Inizializzati vuoti; vengono aggiornati dopo il caricamento da Supabase
+    window.lastSyncedTasks = [];
+    window.lastSyncedEvents = [];
+    window.lastSyncedShoppingLists = [];
+    window.lastSyncedWorkoutSheets = [];
+    window.lastSyncedWorkoutLogs = [];
+    window.lastSyncedLeisurePlanner = [];
 
     // Elementi UI
     const authPage = document.getElementById('auth-page');
@@ -517,12 +518,11 @@ document.addEventListener('DOMContentLoaded', () => {
             lastSyncedArray = window.lastSyncedWorkoutSheets || [];
             table = 'workout_sheets';
         } else if (type === 'workout_logs') {
-            currentArray = JSON.parse(localStorage.getItem('hub-workout-logs')) || [];
+            currentArray = window.workoutLogs || [];
             lastSyncedArray = window.lastSyncedWorkoutLogs || [];
             table = 'workout_logs';
         } else if (type === 'leisure_planner') {
-            const localData = JSON.parse(localStorage.getItem('hub-leisure-data')) || { trips: [] };
-            currentArray = localData.trips || [];
+            currentArray = (window.leisureData && window.leisureData.trips) ? window.leisureData.trips : [];
             lastSyncedArray = window.lastSyncedLeisurePlanner || [];
             table = 'leisure_planner';
         } else {
@@ -561,10 +561,9 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (type === 'workout_sheets') {
                 window.lastSyncedWorkoutSheets = JSON.parse(JSON.stringify(window.workoutSheets));
             } else if (type === 'workout_logs') {
-                window.lastSyncedWorkoutLogs = JSON.parse(JSON.stringify(JSON.parse(localStorage.getItem('hub-workout-logs')) || []));
+                window.lastSyncedWorkoutLogs = JSON.parse(JSON.stringify(window.workoutLogs || []));
             } else if (type === 'leisure_planner') {
-                const localData = JSON.parse(localStorage.getItem('hub-leisure-data')) || { trips: [] };
-                window.lastSyncedLeisurePlanner = JSON.parse(JSON.stringify(localData.trips || []));
+                window.lastSyncedLeisurePlanner = JSON.parse(JSON.stringify((window.leisureData && window.leisureData.trips) ? window.leisureData.trips : []));
             }
         } catch (err) {
             console.error(`Errore di sincronizzazione differenziale [${type}]:`, err.message);
@@ -694,7 +693,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     text: t.text,
                     completed: t.completed
                 }));
-                const localTasks = JSON.parse(localStorage.getItem('hub-tasks')) || [];
+                // Merge: server è fonte di verità; gli elementi in-memory non presenti sul server
+                // e non precedentemente sincronizzati sono offline-only e vengono pushati
+                const localTasks = window.tasks || [];
                 const lastSynced = window.lastSyncedTasks || [];
                 
                 const mergedTasks = [...serverTasks];
@@ -708,7 +709,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 window.tasks = mergedTasks;
                 window.lastSyncedTasks = JSON.parse(JSON.stringify(window.tasks));
-                localStorage.setItem('hub-tasks', JSON.stringify(window.tasks));
                 if (typeof window.renderTasks === 'function') window.renderTasks();
             }
 
@@ -732,7 +732,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     linkedId: ev.linked_id,
                     notes: ev.notes || ''
                 }));
-                const localEvents = JSON.parse(localStorage.getItem('hub-events')) || [];
+                const localEvents = window.events || [];
                 const lastSynced = window.lastSyncedEvents || [];
                 
                 const mergedEvents = [...serverEvents];
@@ -746,7 +746,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 window.events = mergedEvents;
                 window.lastSyncedEvents = JSON.parse(JSON.stringify(window.events));
-                localStorage.setItem('hub-events', JSON.stringify(window.events));
                 if (typeof window.renderEvents === 'function') window.renderEvents();
             }
 
@@ -765,7 +764,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     archived: lst.archived,
                     items: lst.items
                 }));
-                const localShopping = JSON.parse(localStorage.getItem('hub-shopping-lists')) || [];
+                const localShopping = window.shoppingLists || [];
                 const lastSynced = window.lastSyncedShoppingLists || [];
                 
                 const mergedShopping = [...serverShopping];
@@ -779,7 +778,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 window.shoppingLists = mergedShopping;
                 window.lastSyncedShoppingLists = JSON.parse(JSON.stringify(window.shoppingLists));
-                localStorage.setItem('hub-shopping-lists', JSON.stringify(window.shoppingLists));
                 if (typeof window.renderShopping === 'function') window.renderShopping();
             }
 
@@ -796,7 +794,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     name: sheet.name,
                     exercises: sheet.exercises
                 }));
-                const localWorkout = JSON.parse(localStorage.getItem('hub-workout-sheets')) || [];
+                const localWorkout = window.workoutSheets || [];
                 const lastSynced = window.lastSyncedWorkoutSheets || [];
                 
                 const mergedWorkout = [...serverWorkout];
@@ -810,7 +808,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 window.workoutSheets = mergedWorkout;
                 window.lastSyncedWorkoutSheets = JSON.parse(JSON.stringify(window.workoutSheets));
-                localStorage.setItem('hub-workout-sheets', JSON.stringify(window.workoutSheets));
                 if (window.workoutSheets.length > 0) {
                     window.activeSheetId = window.workoutSheets[0].id;
                 }
@@ -833,7 +830,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         sheetId: log.sheet_id,
                         results: log.results
                     }));
-                    const localWorkoutLogs = JSON.parse(localStorage.getItem('hub-workout-logs')) || [];
+                    const localWorkoutLogs = window.workoutLogs || [];
                     const lastSynced = window.lastSyncedWorkoutLogs || [];
                     
                     const mergedWorkoutLogs = [...serverWorkoutLogs];
@@ -845,8 +842,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     });
                     
+                    window.workoutLogs = mergedWorkoutLogs;
                     window.lastSyncedWorkoutLogs = JSON.parse(JSON.stringify(mergedWorkoutLogs));
-                    localStorage.setItem('hub-workout-logs', JSON.stringify(mergedWorkoutLogs));
                     if (typeof window.renderWorkoutHistory === 'function') window.renderWorkoutHistory();
                 }
             } catch (historyErr) {
@@ -872,8 +869,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         luggage: trip.luggage || [],
                         expenses: trip.expenses || []
                     }));
-                    const localData = JSON.parse(localStorage.getItem('hub-leisure-data')) || { trips: [] };
-                    const localTrips = localData.trips || [];
+                    const localTrips = (window.leisureData && window.leisureData.trips) ? window.leisureData.trips : [];
                     const lastSynced = window.lastSyncedLeisurePlanner || [];
                     
                     const mergedTrips = [...serverTrips];
@@ -885,8 +881,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     });
                     
+                    window.leisureData = { trips: mergedTrips };
                     window.lastSyncedLeisurePlanner = JSON.parse(JSON.stringify(mergedTrips));
-                    localStorage.setItem('hub-leisure-data', JSON.stringify({ trips: mergedTrips }));
                     if (typeof window.renderTrips === 'function') window.renderTrips();
                 }
             } catch (leisureErr) {

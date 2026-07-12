@@ -54,25 +54,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let activeTripId = null;
 
-    // Struttura iniziale vuota (senza dati d'esempio)
-    let leisureData = JSON.parse(localStorage.getItem('hub-leisure-data')) || { trips: [] };
+    // Usa window.leisureData come fonte di verità in-memory (popolato da Supabase al login)
+    // In modalità mock, parte da un oggetto vuoto già inizializzato in settings.js
+    if (!window.leisureData) window.leisureData = { trips: [] };
+    if (!window.leisureData.trips) window.leisureData.trips = [];
 
     // Sanitizzazione: assicura che tutti i viaggi locali abbiano un ID valido
-    if (leisureData.trips && Array.isArray(leisureData.trips)) {
-        let changed = false;
-        leisureData.trips.forEach(trip => {
-            if (!trip.id) {
-                trip.id = crypto.randomUUID ? crypto.randomUUID() : 'trip-' + Date.now() + Math.random().toString(36).substr(2, 9);
-                changed = true;
-            }
-        });
-        if (changed) {
-            localStorage.setItem('hub-leisure-data', JSON.stringify(leisureData));
+    window.leisureData.trips.forEach(trip => {
+        if (!trip.id) {
+            trip.id = crypto.randomUUID ? crypto.randomUUID() : 'trip-' + Date.now() + Math.random().toString(36).substr(2, 9);
         }
-    }
+    });
 
     function saveLeisureData() {
-        localStorage.setItem('hub-leisure-data', JSON.stringify(leisureData));
+        // Dati già in window.leisureData — sincronizza con Supabase
         syncLeisureToCalendar();
         
         if (typeof window.syncData === 'function') {
@@ -84,15 +79,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // INTEGRAZIONE CALENDARIO & TIMELINE GIORNALIERA
     // =============================================
     function syncLeisureToCalendar() {
-        // Ricarica i dati aggiornati (es. se sincronizzati da cloud)
-        leisureData = JSON.parse(localStorage.getItem('hub-leisure-data')) || { trips: [] };
-
         if (!window.events) window.events = [];
 
         // Rimuovi tutti i precedenti eventi del Travel Planner
         window.events = window.events.filter(ev => ev.origin !== 'travel-planner');
 
-        leisureData.trips.forEach(trip => {
+        window.leisureData.trips.forEach(trip => {
             // 1. Evento per la durata del viaggio
             window.events.push({
                 id: trip.id,
@@ -122,9 +114,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
         });
-
-        // Salva in LocalStorage
-        localStorage.setItem('hub-events', JSON.stringify(window.events));
 
         // Ricarica le viste
         if (typeof window.renderEvents === 'function') window.renderEvents();
@@ -200,8 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderTrips() {
         if (!travelPlansList) return;
         
-        // Ricarica i dati aggiornati (es. se sincronizzati da cloud)
-        leisureData = JSON.parse(localStorage.getItem('hub-leisure-data')) || { trips: [] };
+        // Legge direttamente da window.leisureData (in-memory, aggiornato da Supabase)
         
         travelPlansList.innerHTML = '';
 

@@ -52,28 +52,16 @@ document.addEventListener('DOMContentLoaded', () => {
         { id: 3, text: "Sapone piatti", category: "Igiene", qty: 2, notes: "Svelto", bought: true }
     ];
 
-    window.shoppingLists = JSON.parse(localStorage.getItem('hub-shopping-lists'));
-
-    if (!window.shoppingLists) {
-        const oldList = JSON.parse(localStorage.getItem('hub-shopping-list'));
-        if (oldList && Array.isArray(oldList)) {
-            window.shoppingLists = [{
-                id: Date.now(),
-                name: "Spesa Casa",
-                date: new Date().toLocaleDateString('it-IT'),
-                archived: false,
-                items: oldList
-            }];
-        } else {
-            window.shoppingLists = [{
-                id: Date.now(),
-                name: "Spesa Settimanale",
-                date: new Date().toLocaleDateString('it-IT'),
-                archived: false,
-                items: defaultShoppingList
-            }];
-        }
-        localStorage.setItem('hub-shopping-lists', JSON.stringify(window.shoppingLists));
+    // window.shoppingLists è già inizializzato come array vuoto in settings.js.
+    // Viene popolato da Supabase al login. In modalità mock usa i default in-memory.
+    if (!window.shoppingLists || window.shoppingLists.length === 0) {
+        window.shoppingLists = [{
+            id: Date.now(),
+            name: "Spesa Settimanale",
+            date: new Date().toLocaleDateString('it-IT'),
+            archived: false,
+            items: defaultShoppingList
+        }];
     }
 
     let currentShoppingFilter = 'all';
@@ -245,9 +233,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (shoppingCount) {
             shoppingCount.textContent = activeCount;
         }
-
-        // Salva su LocalStorage
-        localStorage.setItem('hub-shopping-lists', JSON.stringify(window.shoppingLists));
 
         // Rendi sincrono il widget in home page
         window.renderShoppingWidget();
@@ -561,8 +546,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const id = parseInt(deleteBtn.getAttribute('data-id'));
                 if (confirm("Eliminare definitivamente questa lista della spesa?")) {
                     window.shoppingLists = window.shoppingLists.filter(list => list.id !== id);
-                    localStorage.setItem('hub-shopping-lists', JSON.stringify(window.shoppingLists));
                     renderHistory();
+                    if (typeof window.syncData === 'function') window.syncData('shopping_lists');
                     window.renderShoppingWidget();
                 }
             }

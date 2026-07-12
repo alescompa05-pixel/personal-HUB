@@ -1,22 +1,23 @@
-// Inizializzazione degli Array di Stato Globali
+// Gli array globali vengono inizializzati vuoti; verranno popolati da Supabase al login.
+// La modalità mock (non loggata) usa dati di default solo in-memory senza persistenza.
 window.defaultTasks = [
     { id: 1, text: "Comprare il latte", completed: true },
     { id: 2, text: "Allenamento palestra", completed: false },
     { id: 3, text: "Studiare sviluppo web", completed: false }
 ];
-window.tasks = JSON.parse(localStorage.getItem('hub-tasks')) || window.defaultTasks;
+window.tasks = [];
 
 window.defaultEvents = [
     { id: 1, time: "14:30", title: "Riunione Team", date: new Date().toISOString().split('T')[0], linkedType: null, linkedId: null },
     { id: 2, time: "18:00", title: "Spesa supermercato", date: new Date().toISOString().split('T')[0], linkedType: null, linkedId: null }
 ];
-window.events = JSON.parse(localStorage.getItem('hub-events')) || window.defaultEvents;
-const todayISOStr = new Date().toISOString().split('T')[0];
-window.events.forEach(ev => {
-    if (!ev.date) ev.date = todayISOStr;
-    if (ev.linkedType === undefined) ev.linkedType = null;
-    if (ev.linkedId === undefined) ev.linkedId = null;
-});
+window.events = [];
+
+// Strutture dati globali condivise (in-memory, fonte di verità Supabase)
+window.shoppingLists = window.shoppingLists || [];
+window.workoutSheets = window.workoutSheets || [];
+window.workoutLogs = window.workoutLogs || [];
+window.leisureData = window.leisureData || { trips: [] };
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. IMPOSTAZIONI E PREFERENZE (LOCAL STORAGE)
@@ -100,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Se l'utente è loggato ma non ha completato l'onboarding guidato, mostra il modal
         const onboardingCompleted = localStorage.getItem('hub-onboarding-completed') === 'true';
+        const sessionActive = !window.useMockAuth ? !!window.supabaseClient : localStorage.getItem('hub-session-active') === 'true';
         if (sessionActive && !onboardingCompleted) {
             const modalOnboarding = document.getElementById('modal-onboarding');
             if (modalOnboarding) {
@@ -285,20 +287,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const onboardingTheme = document.getElementById('onboarding-theme');
 
     function initializeDefaultData() {
-        // Popola i task se vuoti
-        if (!localStorage.getItem('hub-tasks')) {
+        // Inizializza i dati di default in-memory (NON in localStorage).
+        // Per gli utenti Supabase i dati vengono caricati dal cloud; questi default
+        // sono usati solo nella modalità mock (non loggata).
+        if (window.tasks.length === 0) {
             window.tasks = window.defaultTasks;
-            localStorage.setItem('hub-tasks', JSON.stringify(window.tasks));
         }
 
-        // Popola gli impegni se vuoti
-        if (!localStorage.getItem('hub-events')) {
+        if (window.events.length === 0) {
             window.events = window.defaultEvents;
-            localStorage.setItem('hub-events', JSON.stringify(window.events));
         }
 
-        // Popola la lista della spesa se vuota
-        if (!localStorage.getItem('hub-shopping-lists')) {
+        if (!window.shoppingLists || window.shoppingLists.length === 0) {
             window.shoppingLists = [{
                 id: Date.now(),
                 name: "Spesa Settimanale",
@@ -310,11 +310,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     { id: 3, text: "Detersivo piatti", category: "Casa", qty: 1, notes: "Ecologico", bought: true }
                 ]
             }];
-            localStorage.setItem('hub-shopping-lists', JSON.stringify(window.shoppingLists));
         }
 
-        // Popola le schede palestra se vuote
-        if (!localStorage.getItem('hub-workout-sheets')) {
+        if (!window.workoutSheets || window.workoutSheets.length === 0) {
             window.workoutSheets = [{
                 id: Date.now(),
                 name: "Scheda Full Body",
@@ -341,7 +339,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 ]
             }];
             window.activeSheetId = window.workoutSheets[0].id;
-            localStorage.setItem('hub-workout-sheets', JSON.stringify(window.workoutSheets));
         }
     }
 
