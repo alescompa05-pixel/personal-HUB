@@ -660,7 +660,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         isSyncingSuspended = true;
         try {
-            console.log("Caricamento dati utente da Supabase...");
+            console.log("Caricamento e unione dati utente da Supabase...");
 
             // Carica Tasks
             const { data: dbTasks, error: errTasks } = await supabase
@@ -670,11 +670,19 @@ document.addEventListener('DOMContentLoaded', () => {
             if (errTasks) throw errTasks;
             
             if (dbTasks) {
-                window.tasks = dbTasks.map(t => ({
+                const serverTasks = dbTasks.map(t => ({
                     id: t.id,
                     text: t.text,
                     completed: t.completed
                 }));
+                const localTasks = JSON.parse(localStorage.getItem('hub-tasks')) || [];
+                const mergedTasks = [...localTasks];
+                serverTasks.forEach(st => {
+                    if (!mergedTasks.some(lt => lt.id === st.id)) {
+                        mergedTasks.push(st);
+                    }
+                });
+                window.tasks = mergedTasks;
                 window.lastSyncedTasks = JSON.parse(JSON.stringify(window.tasks));
                 localStorage.setItem('hub-tasks', JSON.stringify(window.tasks));
                 if (typeof window.renderTasks === 'function') window.renderTasks();
@@ -688,7 +696,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (errEvents) throw errEvents;
 
             if (dbEvents) {
-                window.events = dbEvents.map(ev => ({
+                const serverEvents = dbEvents.map(ev => ({
                     id: ev.id,
                     title: ev.title,
                     time: ev.time,
@@ -699,6 +707,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     linkedType: ev.linked_type,
                     linkedId: ev.linked_id
                 }));
+                const localEvents = JSON.parse(localStorage.getItem('hub-events')) || [];
+                const mergedEvents = [...localEvents];
+                serverEvents.forEach(se => {
+                    if (!mergedEvents.some(le => le.id === se.id)) {
+                        mergedEvents.push(se);
+                    }
+                });
+                window.events = mergedEvents;
                 window.lastSyncedEvents = JSON.parse(JSON.stringify(window.events));
                 localStorage.setItem('hub-events', JSON.stringify(window.events));
                 if (typeof window.renderEvents === 'function') window.renderEvents();
@@ -712,13 +728,21 @@ document.addEventListener('DOMContentLoaded', () => {
             if (errShopping) throw errShopping;
 
             if (dbShopping) {
-                window.shoppingLists = dbShopping.map(lst => ({
+                const serverShopping = dbShopping.map(lst => ({
                     id: lst.id,
                     name: lst.name,
                     date: lst.date,
                     archived: lst.archived,
                     items: lst.items
                 }));
+                const localShopping = JSON.parse(localStorage.getItem('hub-shopping-lists')) || [];
+                const mergedShopping = [...localShopping];
+                serverShopping.forEach(ss => {
+                    if (!mergedShopping.some(ls => ls.id === ss.id)) {
+                        mergedShopping.push(ss);
+                    }
+                });
+                window.shoppingLists = mergedShopping;
                 window.lastSyncedShoppingLists = JSON.parse(JSON.stringify(window.shoppingLists));
                 localStorage.setItem('hub-shopping-lists', JSON.stringify(window.shoppingLists));
                 if (typeof window.renderShopping === 'function') window.renderShopping();
@@ -732,11 +756,19 @@ document.addEventListener('DOMContentLoaded', () => {
             if (errWorkout) throw errWorkout;
 
             if (dbWorkout) {
-                window.workoutSheets = dbWorkout.map(sheet => ({
+                const serverWorkout = dbWorkout.map(sheet => ({
                     id: sheet.id,
                     name: sheet.name,
                     exercises: sheet.exercises
                 }));
+                const localWorkout = JSON.parse(localStorage.getItem('hub-workout-sheets')) || [];
+                const mergedWorkout = [...localWorkout];
+                serverWorkout.forEach(sw => {
+                    if (!mergedWorkout.some(lw => lw.id === sw.id)) {
+                        mergedWorkout.push(sw);
+                    }
+                });
+                window.workoutSheets = mergedWorkout;
                 window.lastSyncedWorkoutSheets = JSON.parse(JSON.stringify(window.workoutSheets));
                 localStorage.setItem('hub-workout-sheets', JSON.stringify(window.workoutSheets));
                 if (window.workoutSheets.length > 0) {
@@ -752,19 +784,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     .from('workout_logs')
                     .select('*')
                     .eq('user_id', userId);
-                if (!errWorkoutLogs && dbWorkoutLogs) {
-                    const workoutLogs = dbWorkoutLogs.map(log => ({
+                if (errWorkoutLogs) throw errWorkoutLogs;
+                
+                if (dbWorkoutLogs) {
+                    const serverWorkoutLogs = dbWorkoutLogs.map(log => ({
                         id: log.id,
                         timestamp: log.timestamp,
                         sheetId: log.sheet_id,
                         results: log.results
                     }));
-                    window.lastSyncedWorkoutLogs = JSON.parse(JSON.stringify(workoutLogs));
-                    localStorage.setItem('hub-workout-logs', JSON.stringify(workoutLogs));
+                    const localWorkoutLogs = JSON.parse(localStorage.getItem('hub-workout-logs')) || [];
+                    const mergedWorkoutLogs = [...localWorkoutLogs];
+                    serverWorkoutLogs.forEach(sl => {
+                        if (!mergedWorkoutLogs.some(ll => ll.id === sl.id)) {
+                            mergedWorkoutLogs.push(sl);
+                        }
+                    });
+                    window.lastSyncedWorkoutLogs = JSON.parse(JSON.stringify(mergedWorkoutLogs));
+                    localStorage.setItem('hub-workout-logs', JSON.stringify(mergedWorkoutLogs));
                     if (typeof window.renderWorkoutHistory === 'function') window.renderWorkoutHistory();
                 }
             } catch (historyErr) {
-                console.warn("Tabella workout_logs non trovata o non accessibile in Supabase.", historyErr.message);
+                console.warn("Tabella workout_logs non trovata o non accessibile in Supabase:", historyErr.message || historyErr);
             }
 
             // Carica Travel Planner
@@ -773,8 +814,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     .from('leisure_planner')
                     .select('*')
                     .eq('user_id', userId);
-                if (!errLeisure && dbLeisure) {
-                    const trips = dbLeisure.map(trip => ({
+                if (errLeisure) throw errLeisure;
+
+                if (dbLeisure) {
+                    const serverTrips = dbLeisure.map(trip => ({
                         id: trip.id,
                         destination: trip.destination,
                         startDate: trip.start_date,
@@ -784,18 +827,42 @@ document.addEventListener('DOMContentLoaded', () => {
                         luggage: trip.luggage || [],
                         expenses: trip.expenses || []
                     }));
-                    window.lastSyncedLeisurePlanner = JSON.parse(JSON.stringify(trips));
-                    localStorage.setItem('hub-leisure-data', JSON.stringify({ trips: trips }));
+                    const localData = JSON.parse(localStorage.getItem('hub-leisure-data')) || { trips: [] };
+                    const localTrips = localData.trips || [];
+                    const mergedTrips = [...localTrips];
+                    serverTrips.forEach(st => {
+                        const existingIdx = mergedTrips.findIndex(lt => lt.id === st.id);
+                        if (existingIdx === -1) {
+                            mergedTrips.push(st);
+                        } else {
+                            // Se presente in entrambi, prediligi il server
+                            mergedTrips[existingIdx] = st;
+                        }
+                    });
+                    window.lastSyncedLeisurePlanner = JSON.parse(JSON.stringify(mergedTrips));
+                    localStorage.setItem('hub-leisure-data', JSON.stringify({ trips: mergedTrips }));
                     if (typeof window.renderTrips === 'function') window.renderTrips();
                 }
             } catch (leisureErr) {
-                console.warn("Tabella leisure_planner non trovata o non accessibile in Supabase.", leisureErr.message);
+                console.warn("Tabella leisure_planner non trovata o non accessibile in Supabase:", leisureErr.message || leisureErr);
             }
 
         } catch (err) {
             console.error("Errore durante il recupero dei dati utente:", err.message);
         } finally {
             isSyncingSuspended = false;
+            
+            // Forza una sincronizzazione iniziale del locale sul server per gli elementi non presenti su Supabase
+            setTimeout(() => {
+                if (typeof window.syncData === 'function') {
+                    window.syncData('tasks');
+                    window.syncData('events');
+                    window.syncData('shopping_lists');
+                    window.syncData('workout_sheets');
+                    window.syncData('workout_logs');
+                    window.syncData('leisure_planner');
+                }
+            }, 500);
         }
     };
 
