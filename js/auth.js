@@ -567,7 +567,24 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (err) {
             console.error(`Errore di sincronizzazione differenziale [${type}]:`, err.message);
+            showSyncErrorToast(type, err.message);
         }
+    }
+
+    function showSyncErrorToast(type, message) {
+        let toast = document.getElementById('sync-error-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'sync-error-toast';
+            toast.style.cssText = "position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(255, 59, 48, 0.95); backdrop-filter: blur(10px); color: white; padding: 12px 20px; border-radius: 12px; z-index: 99999; font-size: 0.9rem; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 4px; max-width: 90%; text-align: center;";
+            document.body.appendChild(toast);
+        }
+        toast.innerHTML = `<div>Errore Sincronizzazione [${type}]</div><small style="opacity: 0.85; font-weight: 400; font-size: 0.8rem;">${message}</small>`;
+        toast.style.display = 'flex';
+        
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 8000);
     }
 
     // 1. Invio/Salvataggio Dati Cloud Atomico e Differenziale
@@ -651,6 +668,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (err) {
             console.error(`Errore di sincronizzazione atomica [${type} - ${action}]:`, err.message);
+            showSyncErrorToast(`${type} - ${action}`, err.message);
         }
     };
 
