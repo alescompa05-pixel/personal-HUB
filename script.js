@@ -49,6 +49,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.initFocusPage();
             }
         }
+        if (targetPageId === 'storico-palestra') {
+            if (typeof window.renderWorkoutHistory === 'function') {
+                window.renderWorkoutHistory();
+            }
+        }
+        if (targetPageId === 'viaggi') {
+            if (typeof window.renderTrips === 'function') {
+                window.renderTrips();
+            }
+        }
     }
 
     const allClickableCards = document.querySelectorAll('.card, .app-card');

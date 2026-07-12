@@ -43,6 +43,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const sessionWorkoutDate = document.getElementById('session-workout-date');
     const sessionExercisesList = document.getElementById('session-exercises-list');
 
+    // Elementi Storico Allenamenti
+    const workoutHistoryList = document.getElementById('workout-history-list');
+    const workoutHistoryDetail = document.getElementById('workout-history-detail');
+
     const defaultWorkoutSheets = [
         {
             id: 1,
@@ -865,6 +869,167 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (e) {
             console.error("Audio error:", e);
+        }
+    }
+
+    window.renderWorkoutHistory = function() {
+        if (!workoutHistoryList) return;
+        workoutHistoryList.innerHTML = '';
+
+        // Ricarica lo storico aggiornato
+        workoutLogs = JSON.parse(localStorage.getItem('hub-workout-logs')) || [];
+
+        if (workoutLogs.length === 0) {
+            workoutHistoryList.innerHTML = `
+                <li style="font-size: 0.9rem; color: var(--text-secondary); text-align: center; padding: 20px 0;">
+                    Non hai ancora registrato nessun allenamento.
+                </li>
+            `;
+            if (workoutHistoryDetail) {
+                workoutHistoryDetail.innerHTML = `
+                    <div class="history-empty-state" style="padding: 40px 0; text-align: center; color: var(--text-secondary);">
+                        I dettagli dell'allenamento compariranno qui.
+                    </div>
+                `;
+            }
+            return;
+        }
+
+        // Ordina dal più recente
+        const sortedLogs = [...workoutLogs].sort((a, b) => b.timestamp - a.timestamp);
+
+        sortedLogs.forEach((log, index) => {
+            const sheet = window.workoutSheets.find(s => s.id === log.sheetId);
+            const sheetName = sheet ? sheet.name : "Scheda eliminata";
+
+            const dateObj = new Date(log.timestamp);
+            const options = { weekday: 'long', day: 'numeric', month: 'long' };
+            let formattedDate = dateObj.toLocaleDateString('it-IT', options);
+            formattedDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+
+            const li = document.createElement('li');
+            li.className = "history-item-card";
+            li.style.cursor = "pointer";
+            li.innerHTML = `
+                <div class="history-item-info">
+                    <h4 style="margin: 0; font-size: 0.95rem; font-weight: 600; color: var(--text-primary);">${sheetName}</h4>
+                    <span class="history-item-meta" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; display: block;">${formattedDate}</span>
+                </div>
+            `;
+
+            li.addEventListener('click', () => {
+                workoutHistoryList.querySelectorAll('li').forEach(item => item.classList.remove('active'));
+                li.classList.add('active');
+                renderHistoryDetail(log);
+            });
+
+            workoutHistoryList.appendChild(li);
+            
+            if (index === 0) {
+                li.classList.add('active');
+                renderHistoryDetail(log);
+            }
+        });
+    };
+
+    function renderHistoryDetail(log) {
+        if (!workoutHistoryDetail) return;
+
+        const sheet = window.workoutSheets.find(s => s.id === log.sheetId);
+        const sheetName = sheet ? sheet.name : "Scheda eliminata";
+
+        const dateObj = new Date(log.timestamp);
+        const options = { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' };
+        let formattedDate = dateObj.toLocaleDateString('it-IT', options);
+        formattedDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+
+        let exercisesHtml = '';
+        const hasResults = log.results && Object.keys(log.results).length > 0;
+
+        if (!hasResults) {
+            exercisesHtml = `
+                <p style="color: var(--text-secondary); font-style: italic; text-align: center; padding: 20px 0;">
+                    Nessun esercizio registrato in questa sessione.
+                </p>
+            `;
+        } else {
+            Object.keys(log.results).forEach(exId => {
+                let exName = "Esercizio rimosso";
+                if (sheet) {
+                    const exObj = sheet.exercises.find(e => e.id == exId);
+                    if (exObj) exName = exObj.name;
+                }
+
+                const sets = log.results[exId];
+                let setsHtml = '';
+                sets.forEach((set, idx) => {
+                    if (set) {
+                        setsHtml += `
+                            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(200, 200, 200, 0.08); padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; border: 1px solid var(--glass-border);">
+                                <span style="font-weight: 500; color: var(--text-secondary);">Serie ${idx + 1}</span>
+                                <span style="font-weight: 600; color: var(--text-primary);">${set.reps} reps @ ${set.load}</span>
+                            </div>
+                        `;
+                    }
+                });
+
+                exercisesHtml += `
+                    <div style="margin-bottom: 16px; border-bottom: 1px solid rgba(0, 0, 0, 0.04); padding-bottom: 12px;">
+                        <h4 style="margin: 0 0 8px 0; font-size: 0.95rem; font-weight: 600; color: var(--text-primary);">${exName}</h4>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            ${setsHtml}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        workoutHistoryDetail.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                <div>
+                    <h3 style="margin: 0; font-size: 1.2rem; font-weight: 700; color: var(--text-primary);">${sheetName}</h3>
+                    <span style="font-size: 0.85rem; color: var(--text-secondary);">${formattedDate}</span>
+                </div>
+                <button id="btn-delete-history-log" style="
+                    background: rgba(255, 59, 48, 0.08);
+                    color: #ff3b30;
+                    border: 1px solid rgba(255, 59, 48, 0.15);
+                    padding: 8px 14px;
+                    border-radius: 12px;
+                    font-size: 0.8rem;
+                    font-weight: 700;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                ">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    Elimina Log
+                </button>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 12px; max-height: 400px; overflow-y: auto; padding-right: 4px;">
+                ${exercisesHtml}
+            </div>
+        `;
+
+        const btnDeleteLog = workoutHistoryDetail.querySelector('#btn-delete-history-log');
+        if (btnDeleteLog) {
+            btnDeleteLog.addEventListener('click', () => {
+                if (confirm("Sei sicuro di voler eliminare questa sessione dall'archivio storico?")) {
+                    workoutLogs = workoutLogs.filter(l => l.id !== log.id);
+                    localStorage.setItem('hub-workout-logs', JSON.stringify(workoutLogs));
+                    
+                    if (typeof window.syncData === 'function') {
+                        window.syncData('workout_logs', 'delete', log);
+                    }
+
+                    window.renderWorkoutHistory();
+                }
+            });
         }
     }
 

@@ -225,4 +225,9 @@
         height: 42px !important;
         font-size: 0.9rem !important;
     }
+
+    .trip-grid-container {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
 }
