@@ -1,0 +1,228 @@
+/* ==========================================================================
+   STILI MOBILE-FIRST / RESPONSIVE (Hub Personale)
+   Ottimizzato per schermi piccoli (smartphone) e uso ad una mano.
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    
+    /* =========================================
+       1. CONTRASTI, AGGIUSTAMENTI GENERALI E CORPI
+       ========================================= */
+    body {
+        padding: 12px;
+        background-attachment: fixed;
+    }
+    
+    .container {
+        padding: 0 4px;
+    }
+
+    /* =========================================
+       2. TARGET DI TOCCO E AREE INTERATTIVE (min 44px)
+       ========================================= */
+    button, 
+    .btn-save, 
+    .btn-back, 
+    .btn-close-modal,
+    .btn-add,
+    .filter-chip,
+    .suggestion-chip,
+    .category-chip,
+    .btn-check-set {
+        min-height: 44px;
+        min-width: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        touch-action: manipulation;
+    }
+
+    .stat-pill {
+        min-height: 40px;
+        padding: 8px 14px;
+        font-size: 0.85rem;
+    }
+
+    /* Aumenta touch target per le icone di modifica/eliminazione */
+    .btn-edit, 
+    .btn-delete, 
+    .btn-edit-block, 
+    .btn-delete-block,
+    .btn-action-sm {
+        width: 44px !important;
+        height: 44px !important;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        padding: 10px !important;
+        border-radius: 12px;
+    }
+
+    /* Checkbox dei task */
+    .task-item {
+        padding: 14px 16px !important;
+        min-height: 52px;
+        gap: 12px;
+    }
+
+    .task-item input[type="checkbox"] {
+        width: 24px;
+        height: 24px;
+        min-width: 24px;
+        min-height: 24px;
+        margin: 0;
+        cursor: pointer;
+    }
+
+    /* =========================================
+       3. GRIGLIE E STRUTTURE A COLONNA SINGOLA
+       ========================================= */
+    .grid-container {
+        grid-template-columns: 1fr !important;
+        gap: 14px;
+    }
+
+    .workout-container,
+    .calendar-layout-container,
+    .focus-layout,
+    .shopping-container {
+        display: flex;
+        flex-direction: column !important;
+        gap: 20px !important;
+    }
+
+    .card {
+        padding: 24px 16px;
+    }
+
+    /* =========================================
+       4. EVITA AUTO-ZOOM SU iOS (Font-size min 16px)
+       ========================================= */
+    input[type="text"],
+    input[type="number"],
+    input[type="email"],
+    input[type="password"],
+    select,
+    textarea {
+        font-size: 16px !important;
+        padding: 12px 14px !important;
+        border-radius: 12px !important;
+        height: 46px !important;
+        width: 100% !important;
+    }
+
+    /* =========================================
+       5. FORM COMPLESSI RESPONSIVE (WRAPPING)
+       ========================================= */
+    .shopping-add-grid,
+    .workout-add-grid,
+    .focus-form-row {
+        display: flex;
+        flex-direction: column !important;
+        gap: 12px !important;
+    }
+
+    .shopping-add-grid > *,
+    .workout-add-grid > *,
+    .focus-form-row > * {
+        width: 100% !important;
+    }
+
+    /* =========================================
+       6. SCORRIMENTO ORIZZONTALE E FLUIDO
+       ========================================= */
+    .shopping-list,
+    .task-list-group,
+    .history-timeline,
+    #focus-timeline-scroll,
+    .modal-card {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Nascondi scrollbar desktop preservando scorrimento orizzontale */
+    .suggestions-row,
+    .forecast-timeline,
+    .quick-stats {
+        overflow-x: auto;
+        white-space: nowrap;
+        flex-wrap: nowrap !important;
+        scrollbar-width: none; /* Firefox */
+        padding-bottom: 6px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .suggestions-row::-webkit-scrollbar,
+    .forecast-timeline::-webkit-scrollbar,
+    .quick-stats::-webkit-scrollbar {
+        display: none; /* Webkit */
+    }
+
+    .suggestions-row {
+        display: flex !important;
+        gap: 8px;
+    }
+
+    .forecast-timeline {
+        display: flex !important;
+        gap: 16px;
+    }
+
+    /* =========================================
+       7. BOTTOM SHEET MODALS (iOS Style)
+       ========================================= */
+    .modal-overlay {
+        align-items: flex-end !important;
+        justify-content: center !important;
+    }
+
+    .modal-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        border-radius: 28px 28px 0 0 !important;
+        padding: 24px 18px 36px 18px !important;
+        max-height: 85vh !important;
+        overflow-y: auto;
+        transform: translateY(100%);
+        transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    .modal-overlay.active .modal-card {
+        transform: translateY(0) !important;
+    }
+
+    .btn-close-modal {
+        top: 14px !important;
+        right: 14px !important;
+        background: rgba(0, 0, 0, 0.05) !important;
+        border-radius: 50%;
+        width: 38px !important;
+        height: 38px !important;
+    }
+
+    .theme-dark .btn-close-modal {
+        background: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    /* =========================================
+       8. BARRA FLOTTANTE ALLENAMENTO E CALENDARIO
+       ========================================= */
+    .active-workout-bar {
+        width: calc(100% - 24px) !important;
+        min-width: unset !important;
+        max-width: 480px !important;
+        bottom: 16px !important;
+        padding: 12px 18px !important;
+        border-radius: 20px !important;
+    }
+
+    /* Calendario griglia giorni su mobile */
+    .calendar-days-grid {
+        gap: 3px !important;
+    }
+
+    .calendar-day-cell {
+        height: 42px !important;
+        font-size: 0.9rem !important;
+    }
+}
