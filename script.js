@@ -1,4 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Registrazione Service Worker per PWA (Progressive Web App)
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('PWA Service Worker registrato con successo:', reg.scope))
+                .catch(err => console.error('Errore registrazione Service Worker:', err));
+        });
+    }
+
     // =============================================
     // COORDiNATORE PRINCIPALE (ENTRY POINT)
     // =============================================
