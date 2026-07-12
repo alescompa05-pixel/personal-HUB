@@ -679,6 +679,10 @@ document.addEventListener('DOMContentLoaded', () => {
             workoutLogs.push(logEntry);
             localStorage.setItem('hub-workout-logs', JSON.stringify(workoutLogs));
 
+            if (typeof window.syncData === 'function') {
+                window.syncData('workout_logs');
+            }
+
             alert("Allenamento completato con successo! Dati salvati nello storico.");
             closeSession();
 

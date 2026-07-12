@@ -29,6 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
     window.lastSyncedEvents = JSON.parse(JSON.stringify(window.events || []));
     window.lastSyncedShoppingLists = JSON.parse(JSON.stringify(window.shoppingLists || []));
     window.lastSyncedWorkoutSheets = JSON.parse(JSON.stringify(window.workoutSheets || []));
+    window.lastSyncedWorkoutLogs = JSON.parse(JSON.stringify(JSON.parse(localStorage.getItem('hub-workout-logs')) || []));
+    window.lastSyncedLeisurePlanner = JSON.parse(JSON.stringify((JSON.parse(localStorage.getItem('hub-leisure-data')) || { trips: [] }).trips || []));
 
     // Elementi UI
     const authPage = document.getElementById('auth-page');
@@ -460,6 +462,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 exercises: payload.exercises
             };
         }
+        if (type === 'workout_logs') {
+            return {
+                id: payload.id,
+                user_id: userId,
+                timestamp: payload.timestamp,
+                sheet_id: payload.sheetId,
+                results: payload.results
+            };
+        }
+        if (type === 'leisure_planner') {
+            return {
+                id: payload.id,
+                user_id: userId,
+                destination: payload.destination,
+                start_date: payload.startDate,
+                end_date: payload.endDate,
+                itinerary: payload.itinerary || [],
+                documents: payload.documents || [],
+                luggage: payload.luggage || [],
+                expenses: payload.expenses || []
+            };
+        }
         return payload;
     }
 
@@ -491,6 +515,15 @@ document.addEventListener('DOMContentLoaded', () => {
             currentArray = window.workoutSheets || [];
             lastSyncedArray = window.lastSyncedWorkoutSheets || [];
             table = 'workout_sheets';
+        } else if (type === 'workout_logs') {
+            currentArray = JSON.parse(localStorage.getItem('hub-workout-logs')) || [];
+            lastSyncedArray = window.lastSyncedWorkoutLogs || [];
+            table = 'workout_logs';
+        } else if (type === 'leisure_planner') {
+            const localData = JSON.parse(localStorage.getItem('hub-leisure-data')) || { trips: [] };
+            currentArray = localData.trips || [];
+            lastSyncedArray = window.lastSyncedLeisurePlanner || [];
+            table = 'leisure_planner';
         } else {
             return;
         }
@@ -526,6 +559,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.lastSyncedShoppingLists = JSON.parse(JSON.stringify(window.shoppingLists));
             } else if (type === 'workout_sheets') {
                 window.lastSyncedWorkoutSheets = JSON.parse(JSON.stringify(window.workoutSheets));
+            } else if (type === 'workout_logs') {
+                window.lastSyncedWorkoutLogs = JSON.parse(JSON.stringify(JSON.parse(localStorage.getItem('hub-workout-logs')) || []));
+            } else if (type === 'leisure_planner') {
+                const localData = JSON.parse(localStorage.getItem('hub-leisure-data')) || { trips: [] };
+                window.lastSyncedLeisurePlanner = JSON.parse(JSON.stringify(localData.trips || []));
             }
         } catch (err) {
             console.error(`Errore di sincronizzazione differenziale [${type}]:`, err.message);
@@ -569,6 +607,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     else if (type === 'events') lastArray = window.lastSyncedEvents;
                     else if (type === 'shopping_lists') lastArray = window.lastSyncedShoppingLists;
                     else if (type === 'workout_sheets') lastArray = window.lastSyncedWorkoutSheets;
+                    else if (type === 'workout_logs') lastArray = window.lastSyncedWorkoutLogs;
+                    else if (type === 'leisure_planner') lastArray = window.lastSyncedLeisurePlanner;
 
                     const idx = lastArray.findIndex(item => item.id === p.id);
                     if (idx !== -1) {
@@ -592,6 +632,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.lastSyncedShoppingLists = window.lastSyncedShoppingLists.filter(item => item.id !== payload.id);
                 } else if (type === 'workout_sheets') {
                     window.lastSyncedWorkoutSheets = window.lastSyncedWorkoutSheets.filter(item => item.id !== payload.id);
+                } else if (type === 'workout_logs') {
+                    window.lastSyncedWorkoutLogs = window.lastSyncedWorkoutLogs.filter(item => item.id !== payload.id);
+                } else if (type === 'leisure_planner') {
+                    window.lastSyncedLeisurePlanner = window.lastSyncedLeisurePlanner.filter(item => item.id !== payload.id);
                 }
             } 
             else if (action === 'clear_completed') {
@@ -702,6 +746,52 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (typeof window.renderActiveWorkoutSheet === 'function') window.renderActiveWorkoutSheet();
             }
 
+            // Carica Storico Allenamenti
+            try {
+                const { data: dbWorkoutLogs, error: errWorkoutLogs } = await supabase
+                    .from('workout_logs')
+                    .select('*')
+                    .eq('user_id', userId);
+                if (!errWorkoutLogs && dbWorkoutLogs) {
+                    const workoutLogs = dbWorkoutLogs.map(log => ({
+                        id: log.id,
+                        timestamp: log.timestamp,
+                        sheetId: log.sheet_id,
+                        results: log.results
+                    }));
+                    window.lastSyncedWorkoutLogs = JSON.parse(JSON.stringify(workoutLogs));
+                    localStorage.setItem('hub-workout-logs', JSON.stringify(workoutLogs));
+                    if (typeof window.renderWorkoutHistory === 'function') window.renderWorkoutHistory();
+                }
+            } catch (historyErr) {
+                console.warn("Tabella workout_logs non trovata o non accessibile in Supabase.", historyErr.message);
+            }
+
+            // Carica Travel Planner
+            try {
+                const { data: dbLeisure, error: errLeisure } = await supabase
+                    .from('leisure_planner')
+                    .select('*')
+                    .eq('user_id', userId);
+                if (!errLeisure && dbLeisure) {
+                    const trips = dbLeisure.map(trip => ({
+                        id: trip.id,
+                        destination: trip.destination,
+                        startDate: trip.start_date,
+                        endDate: trip.end_date,
+                        itinerary: trip.itinerary || [],
+                        documents: trip.documents || [],
+                        luggage: trip.luggage || [],
+                        expenses: trip.expenses || []
+                    }));
+                    window.lastSyncedLeisurePlanner = JSON.parse(JSON.stringify(trips));
+                    localStorage.setItem('hub-leisure-data', JSON.stringify({ trips: trips }));
+                    if (typeof window.renderTrips === 'function') window.renderTrips();
+                }
+            } catch (leisureErr) {
+                console.warn("Tabella leisure_planner non trovata o non accessibile in Supabase.", leisureErr.message);
+            }
+
         } catch (err) {
             console.error("Errore durante il recupero dei dati utente:", err.message);
         } finally {
@@ -740,6 +830,22 @@ document.addEventListener('DOMContentLoaded', () => {
             window.saveWorkouts = function () {
                 originalSaveWorkouts();
                 window.syncData('workout_sheets');
+            };
+        }
+
+        if (typeof window.renderWorkoutHistory === 'function') {
+            const originalRenderWorkoutHistory = window.renderWorkoutHistory;
+            window.renderWorkoutHistory = function () {
+                originalRenderWorkoutHistory();
+                window.syncData('workout_logs');
+            };
+        }
+
+        if (typeof window.renderTrips === 'function') {
+            const originalRenderTrips = window.renderTrips;
+            window.renderTrips = function () {
+                originalRenderTrips();
+                window.syncData('leisure_planner');
             };
         }
     }, 300);
