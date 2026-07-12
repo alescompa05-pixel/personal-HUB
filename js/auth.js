@@ -505,8 +505,8 @@ document.addEventListener('DOMContentLoaded', () => {
             lastSyncedArray = window.lastSyncedTasks || [];
             table = 'tasks';
         } else if (type === 'events') {
-            currentArray = window.events || [];
-            lastSyncedArray = window.lastSyncedEvents || [];
+            currentArray = (window.events || []).filter(ev => ev.origin !== 'travel-planner');
+            lastSyncedArray = (window.lastSyncedEvents || []).filter(ev => ev.origin !== 'travel-planner');
             table = 'events';
         } else if (type === 'shopping_lists') {
             currentArray = window.shoppingLists || [];
@@ -888,6 +888,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.lastSyncedLeisurePlanner = JSON.parse(JSON.stringify(mergedTrips));
                     localStorage.setItem('hub-leisure-data', JSON.stringify({ trips: mergedTrips }));
                     if (typeof window.renderTrips === 'function') window.renderTrips();
+                    if (typeof window.syncLeisureToCalendar === 'function') {
+                        window.syncLeisureToCalendar();
+                    }
                 }
             } catch (leisureErr) {
                 console.warn("Tabella leisure_planner non trovata o non accessibile in Supabase:", leisureErr.message || leisureErr);

@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function saveLeisureData() {
         localStorage.setItem('hub-leisure-data', JSON.stringify(leisureData));
-        syncLeisureToCalendar();
+        window.syncLeisureToCalendar();
         
         if (typeof window.syncData === 'function') {
             window.syncData('leisure_planner');
@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // =============================================
     // INTEGRAZIONE CALENDARIO & TIMELINE GIORNALIERA
     // =============================================
-    function syncLeisureToCalendar() {
+    window.syncLeisureToCalendar = function() {
         // Ricarica i dati aggiornati (es. se sincronizzati da cloud)
         leisureData = JSON.parse(localStorage.getItem('hub-leisure-data')) || { trips: [] };
 
@@ -715,5 +715,5 @@ document.addEventListener('DOMContentLoaded', () => {
     window.renderTrips = renderTrips;
     renderTrips();
     // Forza la sincronizzazione iniziale degli eventi salvati nel calendario
-    syncLeisureToCalendar();
+    window.syncLeisureToCalendar();
 });
