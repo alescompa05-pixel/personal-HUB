@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hub Personale</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="apple-touch-icon" href="icon.svg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <script>
+        // Previene il flash visivo della schermata di login se l'utente è già loggato
+        if (localStorage.getItem('hub-session-active') === 'true') {
+            document.documentElement.classList.add('session-loading');
+        }
+    </script>
+</head>
+
+<body>
+
+    <div class="container">
+        <!-- TOP BAR -->
+        <nav class="top-bar" style="display: none;">
+            <div class="search-bar" style="position: relative;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="omnibar-input"
+                    placeholder="Cerca o scrivi un comando (es. 'spesa latte', 'task studiare')...">
+                <div id="omnibar-suggestions-box" class="omnibar-suggestions" style="display: none;"></div>
+            </div>
+            <div class="user-profile" id="btn-profile" title="Impostazioni Profilo">
+                <div class="user-avatar" id="navbar-avatar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+            </div>
+        </nav>
+
+        <!-- AUTHENTICATION PAGE (GLASSMORPHISM LOGIN) -->
+        <section id="auth-page" class="page active">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <div class="auth-logo">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </div>
+                    <h2 id="auth-title">Accedi al tuo Hub</h2>
+                    <p id="auth-subtitle">Inserisci le tue credenziali per sbloccare l'applicazione</p>
+                </div>
+                
+                <div id="auth-error-msg" class="auth-error" style="display: none;"></div>
+
+                <form id="auth-form" class="settings-form" onsubmit="event.preventDefault();">
+                    <div class="shopping-input-row" style="margin-bottom: 16px;">
+                        <label for="auth-email" style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.03em;">Email</label>
+                        <input type="email" id="auth-email" placeholder="es. utente@esempio.com" required autocomplete="email"
+                            style="width: 100%; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 12px 16px; border-radius: 14px; font-size: 0.95rem; outline: none; color: var(--text-primary);">
+                    </div>
+                    <div class="shopping-input-row" style="margin-bottom: 24px;">
+                        <label for="auth-password" style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.03em;">Password</label>
+                        <input type="password" id="auth-password" placeholder="••••••••" required autocomplete="current-password"
+                            style="width: 100%; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 12px 16px; border-radius: 14px; font-size: 0.95rem; outline: none; color: var(--text-primary);">
+                    </div>
+                    <button type="submit" id="btn-auth-submit" class="btn-save" style="width: 100%; text-align: center; justify-content: center; padding: 14px; margin-top: 10px;">Accedi</button>
+                </form>
+
+                <div class="auth-footer" style="margin-top: 24px; text-align: center; font-size: 0.9rem; display: flex; flex-direction: column; gap: 14px;">
+                    <a href="#" id="auth-toggle-link" style="color: var(--text-secondary); text-decoration: none; transition: color 0.2s;">
+                        Non hai un account? <span style="color: var(--apple-blue); font-weight: 600;">Registrati</span>
+                    </a>
+                    <span style="font-size: 0.72rem; opacity: 0.7; color: var(--text-secondary);">
+                        Proseguendo, accetti i <a href="#" class="link-open-legal" style="color: var(--apple-blue); text-decoration: underline;">Termini e la Privacy Policy</a>.
+                    </span>
+                </div>
+            </div>
+        </section>
+
+        <!-- DASHBOARD PRINCIPALE -->
+        <main id="dashboard" class="page">
+            <header class="dashboard-header">
+                <h1 id="greeting">Buongiorno</h1>
+                <p id="current-date">Caricamento data...</p>
+            </header>
+
+            <!-- STATISTICHE RAPIDE -->
+            <div class="quick-stats">
+                <div class="stat-pill" id="weather-pill" title="Visualizza dettagli meteo">
+                    <span id="weather-pill-icon" style="margin-right: 4px; display: inline-flex; align-items: center; justify-content: center;">☀️</span>
+                    <span id="weather-pill-text">Caricamento meteo...</span>
+                </div>
+                <div class="stat-pill" id="tasks-pill" title="Visualizza i tuoi task">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span id="tasks-count-display">3</span> Task oggi
+                </div>
+                <div class="stat-pill" id="events-pill" title="Visualizza i tuoi impegni">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <span id="events-count-display">1</span> Impegno
+                </div>
+                <div class="stat-pill" id="shopping-pill" title="Visualizza dettagli spesa">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <polyline points="3 6 4 7 6 5"></polyline>
+                        <polyline points="3 12 4 13 6 11"></polyline>
+                        <polyline points="3 18 4 19 6 17"></polyline>
+                    </svg>
+                    <span id="shopping-count-display">0</span> Spesa
+                </div>
+                <div class="stat-pill" id="workout-pill" title="Visualizza dettagli allenamento">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="6" y1="5" x2="6" y2="19"></line>
+                        <line x1="18" y1="5" x2="18" y2="19"></line>
+                        <rect x="2" y="9" width="8" height="6" rx="2"></rect>
+                        <rect x="14" y="9" width="8" height="6" rx="2"></rect>
+                        <line x1="10" y1="12" x2="14" y2="12"></line>
+                    </svg>
+                    <span id="workout-count-display">0</span> Palestra
+                </div>
+            </div>
+
+            <!-- GRID PRINCIPALE -->
+            <div class="grid-container">
+                <div class="card" data-target="casa">
+                    <div class="card-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                    </div>
+                    <h2>Casa</h2>
+                    <p>Spese e gestione</p>
+                </div>
+                <div class="card" data-target="sport">
+                    <div class="card-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 8h1a4 4 0 0 1 0 8h-1M6 8H5a4 4 0 0 0 0 8h1M6 8v8M18 8v8"></path>
+                        </svg>
+                    </div>
+                    <h2>Sport</h2>
+                    <p>Schede e salute</p>
+                </div>
+                <div class="card" data-target="produttivita">
+                    <div class="card-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </div>
+                    <h2>Produttività</h2>
+                    <p>Note e focus</p>
+                </div>
+                <div class="card" data-target="tempo-libero">
+                    <div class="card-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                    </div>
+                    <h2>Relax</h2>
+                    <p>Hobby e media</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- PAGINE UTILITY -->
+        <section id="casa" class="page">
+            <button class="btn-back" data-back="dashboard">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Indietro
+            </button>
+            <h2>Gestione Casa</h2>
+            <div class="apps-grid">
+                <div class="app-card" data-target="spesa" title="Apri Lista della Spesa">
+                    <div class="app-card-icon" style="background: rgba(52, 199, 89, 0.08); color: #34c759;">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="8" y1="6" x2="21" y2="6"></line>
+                            <line x1="8" y1="12" x2="21" y2="12"></line>
+                            <line x1="8" y1="18" x2="21" y2="18"></line>
+                            <polyline points="3 6 4 7 6 5"></polyline>
+                            <polyline points="3 12 4 13 6 11"></polyline>
+                            <polyline points="3 18 4 19 6 17"></polyline>
+                        </svg>
+                    </div>
+                    <div class="app-card-info">
+                        <h3>Lista della Spesa</h3>
+                        <p>Articoli da acquistare, quantità e filtri per categorie</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="sport" class="page">
+            <button class="btn-back" data-back="dashboard">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Indietro
+            </button>
+            <h2>Sport</h2>
+            <div class="apps-grid">
+                <div class="app-card" data-target="palestra">
+                    <div class="app-card-icon" style="background: rgba(0, 122, 255, 0.08); color: var(--apple-blue);">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="6" y1="5" x2="6" y2="19"></line>
+                            <line x1="18" y1="5" x2="18" y2="19"></line>
+                            <rect x="2" y="9" width="8" height="6" rx="2"></rect>
+                            <rect x="14" y="9" width="8" height="6" rx="2"></rect>
+                            <line x1="10" y1="12" x2="14" y2="12"></line>
+                        </svg>
+                    </div>
+                    <div class="app-card-info">
+                        <h3>Schede Palestra</h3>
+                        <p>Pianifica i tuoi allenamenti, esercizi, serie, reps e carichi</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MICRO APP PALESTRA -->
+        <section id="palestra" class="page">
+            <button class="btn-back" data-back="sport">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Indietro
+            </button>
+
+            <div class="shopping-page-header">
+                <h2>Schede Palestra</h2>
+                <div class="shopping-actions-group">
+                    <button class="btn-primary" id="btn-new-workout-sheet"
+                        style="font-size: 0.9rem; font-weight: 600; padding: 10px 18px; border-radius: 12px; cursor: pointer; border: none; background: var(--apple-blue); color: white;">Nuova
+                        Scheda</button>
+                </div>
+            </div>
+
+            <div class="workout-container"
+                style="display: grid; grid-template-columns: 280px 1fr; gap: 24px; align-items: start; margin-top: 20px;">
+                <!-- Sidebar: elenco schede -->
+                <div class="workout-sidebar"
+                    style="background: var(--glass-bg); backdrop-filter: var(--glass-blur); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; box-shadow: var(--shadow-soft);">
+                    <h3 style="font-size: 1.05rem; font-weight: 600; margin-bottom: 16px; color: var(--text-primary);">
+                        Le tue schede</h3>
+                    <ul id="workout-sheets-list"
+                        style="list-style: none; display: flex; flex-direction: column; gap: 10px; padding: 0; margin: 0;">
+                        <!-- Popolato dinamicamente -->
+                    </ul>
+                </div>
+
+                <!-- Main Content: dettagli esercizi della scheda attiva -->
+                <div class="workout-main-content">
+                    <div class="workout-card-detail"
+                        style="background: var(--glass-bg); backdrop-filter: var(--glass-blur); border: 1px solid var(--glass-border); border-radius: 20px; padding: 24px; box-shadow: var(--shadow-soft);">
+                        <div class="active-sheet-header"
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid rgba(0,0,0,0.04); flex-wrap: wrap; gap: 10px;">
+                            <h3 id="active-sheet-name"
+                                style="font-size: 1.2rem; font-weight: 600; color: var(--text-primary);">Seleziona una
+                                scheda</h3>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <button class="btn-primary" id="btn-start-workout"
+                                    style="display: none; font-size: 0.85rem; font-weight: 600; padding: 6px 14px; border-radius: 10px; cursor: pointer; border: none; background: #34c759; color: white;">Inizia
+                                    Allenamento</button>
+                                <button class="btn-clear-all" id="btn-delete-active-sheet"
+                                    style="display: none; background: transparent; border: none; color: #ff3b30; font-size: 0.85rem; font-weight: 600; cursor: pointer; padding: 4px 8px; border-radius: 6px;">Elimina
+                                    Scheda</button>
+                            </div>
+                        </div>
+
+                        <div id="active-sheet-empty-state" class="history-empty-state"
+                            style="padding: 40px 0; text-align: center; color: var(--text-secondary);">
+                            <p>Seleziona una scheda a sinistra o creane una nuova per visualizzare ed inserire gli
+                                esercizi.</p>
+                        </div>
+
+                        <div id="active-sheet-content" style="display: none;">
+                            <ul class="shopping-list" id="workout-exercises-list"
+                                style="list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; max-height: 400px; overflow-y: auto;">
+                                <!-- Esercizi popolati dinamicamente -->
+                            </ul>
+
+                            <!-- Form di aggiunta esercizio in linea -->
+                            <form id="workout-add-exercise-form" style="margin-top: 20px;">
+                                <div class="workout-add-grid">
+                                    <div class="input-group">
+                                        <label for="input-exercise-name"
+                                            style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.03em;">Esercizio</label>
+                                        <input type="text" id="input-exercise-name" placeholder="es. Panca Piana"
+                                            required autocomplete="off"
+                                            style="width: 100%; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; outline: none; color: var(--text-primary);">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="input-exercise-sets-reps"
+                                            style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.03em; text-align: center; display: block;">Serie
+                                            x Reps</label>
+                                        <input type="text" id="input-exercise-sets-reps" placeholder="es. 4x8" required
+                                            autocomplete="off"
+                                            style="width: 100%; text-align: center; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; outline: none; color: var(--text-primary);">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="input-exercise-rest"
+                                            style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.03em; text-align: center; display: block;">Recupero</label>
+                                        <input type="text" id="input-exercise-rest" placeholder="es. 90s"
+                                            autocomplete="off"
+                                            style="width: 100%; text-align: center; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; outline: none; color: var(--text-primary);">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="input-exercise-load"
+                                            style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.03em; text-align: center; display: block;">Carico</label>
+                                        <input type="text" id="input-exercise-load" placeholder="es. 60kg"
+                                            autocomplete="off"
+                                            style="width: 100%; text-align: center; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; outline: none; color: var(--text-primary);">
+                                    </div>
+                                    <button type="submit" class="btn-add-shopping"
+                                        style="width: 44px; height: 44px; border-radius: 12px; font-size: 1.4rem; padding: 0; display: flex; align-items: center; justify-content: center; font-weight: 500; align-self: flex-end;">+</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="produttivita" class="page">
+            <button class="btn-back" data-back="dashboard">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Indietro
+            </button>
+            <h2>Produttività</h2>
+            <div class="apps-grid" style="margin-top: 20px;">
+                <div class="app-card" data-target="calendario" title="Apri Calendario Intelligente">
+                    <div class="app-card-icon" style="background: rgba(0, 122, 255, 0.08); color: var(--apple-blue);">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                    </div>
+                    <div class="app-card-info">
+                        <h3>Calendario Intelligente</h3>
+                        <p>Gestisci i tuoi impegni e collegali alle tue schede palestra o liste spesa</p>
+                    </div>
+                </div>
+
+                <div class="app-card" data-target="focus-day" title="Apri Giornata Focus">
+                    <div class="app-card-icon" style="background: rgba(243, 156, 18, 0.08); color: #f39c12;">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </div>
+                    <div class="app-card-info">
+                        <h3>Giornata Focus</h3>
+                        <p>Pianifica la tua giornata con blocchi orari e analizza la ripartizione del tempo</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MICRO APP CALENDARIO INTELLIGENTE -->
+        <section id="calendario" class="page">
+            <button class="btn-back" data-back="produttivita">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Indietro
+            </button>
+            
+            <div class="shopping-page-header">
+                <h2>Calendario Intelligente</h2>
+            </div>
+
+            <div class="calendar-layout-container">
+                <!-- Colonna 1: Griglia Mese Calendario -->
+                <div class="calendar-card">
+                    <div class="calendar-month-selector">
+                        <button type="button" id="btn-prev-month" class="btn-clear-all" style="padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 1rem;"><</button>
+                        <h3 id="calendar-current-month-year">Luglio 2026</h3>
+                        <button type="button" id="btn-next-month" class="btn-clear-all" style="padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 1rem;">></button>
+                    </div>
+                    
+                    <div class="calendar-grid-header">
+                        <div>Lun</div>
+                        <div>Mar</div>
+                        <div>Mer</div>
+                        <div>Gio</div>
+                        <div>Ven</div>
+                        <div>Sab</div>
+                        <div>Dom</div>
+                    </div>
+                    
+                    <div id="calendar-days-grid" class="calendar-days-grid">
+                        <!-- Popolato dinamicamente -->
+                    </div>
+                </div>
+
+                <!-- Colonna 2: Dettagli Impegni & Form Creazione -->
+                <div style="display: flex; flex-direction: column; gap: 24px;">
+                    <!-- Lista Impegni Giorno -->
+                    <div class="calendar-card">
+                        <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 12px; color: var(--text-primary); border-bottom: 1px solid rgba(0,0,0,0.04); padding-bottom: 10px;">
+                            Impegni del <span id="calendar-selected-date-label">11/07/2026</span>
+                        </h3>
+                        <ul id="calendar-selected-day-events" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; max-height: 240px; overflow-y: auto;">
+                            <!-- Popolato dinamicamente da JS -->
+                        </ul>
+                    </div>
+
+                    <!-- Nuovo Impegno Form -->
+                    <div class="calendar-card">
+                        <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; color: var(--text-primary);">Nuovo Impegno</h3>
+                        
+                        <form id="calendar-add-event-form" style="display: flex; flex-direction: column; gap: 14px;">
+                            <div class="input-group" style="display: flex; flex-direction: column; gap: 6px;">
+                                <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.03em;">Titolo Impegno</label>
+                                <input type="text" id="input-calendar-event-title" placeholder="Es. Riunione, Spesa..." required autocomplete="off" style="width: 100%; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; outline: none; color: var(--text-primary);">
+                            </div>
+                            
+                            <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 4px;">
+                                <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 550; color: var(--text-primary); cursor: pointer;">
+                                    <input type="checkbox" id="input-calendar-event-allday" style="cursor: pointer;">
+                                    Tutto il giorno
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 550; color: var(--text-primary); cursor: pointer;">
+                                    <input type="checkbox" id="input-calendar-event-multiday" style="cursor: pointer;">
+                                    Più giorni
+                                </label>
+                            </div>
+
+                            <!-- Data Inizio e Data Fine (visibile se più giorni) -->
+                            <div id="calendar-date-range-group" style="display: none; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 4px;">
+                                <div class="input-group" style="display: flex; flex-direction: column; gap: 6px;">
+                                    <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.03em;">Data Inizio</label>
+                                    <input type="date" id="input-calendar-event-start-date" style="width: 100%; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; outline: none; color: var(--text-primary);">
+                                </div>
+                                <div class="input-group" style="display: flex; flex-direction: column; gap: 6px;">
+                                    <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.03em;">Data Fine</label>
+                                    <input type="date" id="input-calendar-event-end-date" style="width: 100%; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; outline: none; color: var(--text-primary);">
+                                </div>
+                            </div>
+
+                            <!-- Ora Inizio e Ora Fine (invisibile se tutto il giorno) -->
+                            <div id="calendar-time-range-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 4px;">
+                                <div class="input-group" style="display: flex; flex-direction: column; gap: 6px;">
+                                    <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.03em;">Ora Inizio</label>
+                                    <input type="time" id="input-calendar-event-time" required style="width: 100%; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; outline: none; color: var(--text-primary);">
+                                </div>
+                                <div class="input-group" style="display: flex; flex-direction: column; gap: 6px;">
+                                    <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.03em;">Ora Fine</label>
+                                    <input type="time" id="input-calendar-event-end-time" style="width: 100%; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; outline: none; color: var(--text-primary);">
+                                </div>
+                            </div>
+
+                            <div class="input-group" style="display: flex; flex-direction: column; gap: 6px;">
+                                <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.03em;">Tipo Impegno</label>
+                                <div class="select-wrapper">
+                                    <select id="select-calendar-event-type" style="width: 100%; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; outline: none; color: var(--text-primary); cursor: pointer;">
+                                        <option value="generic">Generico</option>
+                                        <option value="lavoro">Lavoro</option>
+                                        <option value="studio">Studio</option>
+                                        <option value="salute">Salute</option>
+                                        <option value="personale">Personale</option>
+                                        <option value="tempo-libero">Tempo Libero</option>
+                                        <option value="spesa">Spesa</option>
+                                        <option value="allenamento">Allenamento</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Campi Collegamento Condizionali (Spesa / Palestra) -->
+                            <div id="calendar-link-spesa-group" class="input-group" style="display: none; flex-direction: column; gap: 6px;">
+                                <label for="select-calendar-link-spesa" style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.03em;">Collega Lista Spesa</label>
+                                <div class="select-wrapper">
+                                    <select id="select-calendar-link-spesa" style="width: 100%; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; outline: none; color: var(--text-primary); cursor: pointer;">
+                                        <!-- Popolato dinamicamente -->
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div id="calendar-link-palestra-group" class="input-group" style="display: none; flex-direction: column; gap: 6px;">
+                                <label for="select-calendar-link-palestra" style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.03em;">Collega Scheda Allenamento</label>
+                                <div class="select-wrapper">
+                                    <select id="select-calendar-link-palestra" style="width: 100%; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; outline: none; color: var(--text-primary); cursor: pointer;">
+                                        <!-- Popolato dinamicamente -->
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; width: 100%;">
+                                <button type="button" id="btn-cancel-edit-event" class="btn-save" style="background: rgba(255, 255, 255, 0.2); color: var(--text-primary); border: 1px solid var(--glass-border); box-shadow: none; display: none; flex: 1; text-align: center; justify-content: center; padding: 10px;">Annulla</button>
+                                <button type="submit" id="btn-save-calendar-event" class="btn-save" style="flex: 2; text-align: center; justify-content: center; padding: 10px;">Aggiungi Impegno</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MICRO APP GIORNATA FOCUS -->
+        <section id="focus-day" class="page">
+            <button class="btn-back" data-back="produttivita">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Indietro
+            </button>
+            
+            <div class="shopping-page-header">
+                <h2>Giornata Focus</h2>
+                <div style="font-size: 0.95rem; font-weight: 550; color: var(--text-secondary);" id="focus-today-date-label">
+                    Sabato 11 Luglio
+                </div>
+            </div>
+
+            <div class="focus-layout">
+                <!-- Colonna 1: Timeline Giornaliera -->
+                <div class="calendar-card" style="padding: 20px; max-height: 700px; display: flex; flex-direction: column;">
+                    <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; color: var(--text-primary); display: flex; justify-content: space-between; align-items: center;">
+                        <span>Timeline Odierna</span>
+                        <small style="font-size: 0.72rem; font-weight: 500; color: var(--text-secondary); opacity: 0.8; text-transform: uppercase;">07:00 - 23:00</small>
+                    </h3>
+                    
+                    <div id="focus-timeline-scroll" style="position: relative; overflow-y: auto; flex-grow: 1; max-height: 600px; padding-right: 8px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.04); background: rgba(255, 255, 255, 0.1);">
+                        <div id="focus-timeline-ruler" style="position: relative; height: 960px; width: 100%;">
+                            <!-- Righe Orarie Sottofondo -->
+                            <div class="timeline-grid" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
+                                <!-- Le righe orarie verranno generate da JS -->
+                            </div>
+                            
+                            <!-- Container dei blocchi assoluti -->
+                            <div id="focus-blocks-container" style="position: absolute; top: 0; left: 60px; right: 0; height: 100%;">
+                                <!-- Popolato da JS -->
+                            </div>
+
+                            <!-- Linea orario corrente -->
+                            <div id="focus-live-line" class="focus-live-line" style="display: none; position: absolute; left: 0; right: 0; height: 2px; background: #ff3b30; z-index: 10; pointer-events: none;">
+                                <span class="focus-live-line-dot" style="position: absolute; left: 52px; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: #ff3b30; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.15);"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Colonna 2: Inserimento rapido & Statistiche -->
+                <div style="display: flex; flex-direction: column; gap: 24px;">
+                    <!-- Quick Add Form -->
+                    <div class="calendar-card" style="padding: 20px;">
+                        <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 14px; color: var(--text-primary);">Pianifica Blocco</h3>
+                        
+                        <form id="focus-add-block-form" style="display: flex; flex-direction: column; gap: 12px;">
+                            <div class="input-group" style="display: flex; flex-direction: column; gap: 4px;">
+                                <label style="font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase;">Nome Attività</label>
+                                <input type="text" id="input-focus-block-title" placeholder="Cosa farai?" required autocomplete="off" style="width: 100%; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 10px; font-size: 0.9rem; outline: none; color: var(--text-primary);">
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <div class="input-group" style="display: flex; flex-direction: column; gap: 4px;">
+                                    <label style="font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase;">Inizio</label>
+                                    <input type="time" id="input-focus-block-start" required style="width: 100%; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 10px; font-size: 0.9rem; outline: none; color: var(--text-primary);">
+                                </div>
+                                <div class="input-group" style="display: flex; flex-direction: column; gap: 4px;">
+                                    <label style="font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase;">Fine</label>
+                                    <input type="time" id="input-focus-block-end" required style="width: 100%; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 10px; font-size: 0.9rem; outline: none; color: var(--text-primary);">
+                                </div>
+                            </div>
+
+                            <div class="input-group" style="display: flex; flex-direction: column; gap: 4px;">
+                                <label style="font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase;">Categoria</label>
+                                <div class="select-wrapper">
+                                    <select id="select-focus-block-category" style="width: 100%; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 10px; font-size: 0.9rem; outline: none; color: var(--text-primary); cursor: pointer;">
+                                        <option value="lavoro">Lavoro</option>
+                                        <option value="studio">Studio</option>
+                                        <option value="salute">Salute</option>
+                                        <option value="personale">Personale</option>
+                                        <option value="tempo-libero">Tempo Libero</option>
+                                        <option value="spesa">Spesa</option>
+                                        <option value="allenamento">Allenamento</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Selettori Condizionali collegati -->
+                            <div id="focus-link-spesa-group" class="input-group" style="display: none; flex-direction: column; gap: 4px;">
+                                <label for="select-focus-link-spesa" style="font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase;">Collega Lista Spesa</label>
+                                <div class="select-wrapper">
+                                    <select id="select-focus-link-spesa" style="width: 100%; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 10px; font-size: 0.9rem; outline: none; color: var(--text-primary); cursor: pointer;">
+                                        <!-- Popolato da JS -->
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div id="focus-link-palestra-group" class="input-group" style="display: none; flex-direction: column; gap: 4px;">
+                                <label for="select-focus-link-palestra" style="font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase;">Collega Scheda Allenamento</label>
+                                <div class="select-wrapper">
+                                    <select id="select-focus-link-palestra" style="width: 100%; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 10px; font-size: 0.9rem; outline: none; color: var(--text-primary); cursor: pointer;">
+                                        <!-- Popolato da JS -->
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 8px; margin-top: 6px; width: 100%;">
+                                <button type="button" id="btn-cancel-edit-block" class="btn-save" style="background: rgba(255, 255, 255, 0.2); color: var(--text-primary); border: 1px solid var(--glass-border); box-shadow: none; display: none; padding: 10px; flex: 1; text-align: center; justify-content: center;">Annulla</button>
+                                <button type="submit" id="btn-save-focus-block" class="btn-save" style="padding: 10px; flex: 2; text-align: center; justify-content: center;">Aggiungi Blocco</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Auditing Stats -->
+                    <div class="calendar-card" style="padding: 20px;">
+                        <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 14px; color: var(--text-primary);">Ripartizione Tempo</h3>
+                        <div id="focus-statistics-container" style="display: flex; flex-direction: column; gap: 12px;">
+                            <!-- Progress bar delle categorie generate da JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Colonna 3: Task Pendenti -->
+                <div class="calendar-card" style="padding: 20px; max-height: 700px; display: flex; flex-direction: column;">
+                    <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; color: var(--text-primary); border-bottom: 1px solid rgba(0,0,0,0.04); padding-bottom: 10px;">
+                        Task da Pianificare
+                    </h3>
+                    <ul id="focus-pending-tasks-list" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex-grow: 1;">
+                        <!-- Lista task caricati da localStorage -->
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="tempo-libero" class="page">
+            <button class="btn-back" data-back="dashboard">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Indietro
+            </button>
+            <h2>Relax</h2>
+            <div class="utility-placeholder">
+                <p>Utility in arrivo...</p>
+            </div>
+        </section>
+
+        <!-- MICRO APP SPESA -->
+        <section id="spesa" class="page">
+            <button class="btn-back" data-back="casa">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Indietro
+            </button>
+
+            <div class="shopping-page-header">
+                <h2>Lista della Spesa</h2>
+                <div class="shopping-actions-group">
+                    <button class="btn-header-secondary" id="btn-new-list" title="Crea una nuova lista della spesa">
+                        <span>+ Nuova Lista</span>
+                    </button>
+                    <button class="btn-header-secondary" id="btn-history-list"
+                        title="Visualizza cronologia liste passate">
+                        <span>🕒 Cronologia</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SUGGERIMENTI RAPIDI DI AGGIUNTA -->
+            <div class="quick-add-suggestions">
+                <h4>Aggiunta Rapida</h4>
+                <div class="suggestions-row" id="suggestions-row-items">
+                    <button class="suggestion-chip" data-item="Pane" data-category="Alimentari">Pane</button>
+                    <button class="suggestion-chip" data-item="Latte" data-category="Alimentari">Latte</button>
+                    <button class="suggestion-chip" data-item="Uova" data-category="Alimentari">Uova</button>
+                    <button class="suggestion-chip" data-item="Pasta" data-category="Alimentari">Pasta</button>
+                    <button class="suggestion-chip" data-item="Acqua" data-category="Bevande">Acqua</button>
+                    <button class="suggestion-chip" data-item="Frutta" data-category="Alimentari">Frutta</button>
+                    <button class="suggestion-chip" data-item="Caffè" data-category="Alimentari">Caffè</button>
+                    <button class="suggestion-chip" data-item="Carta Igienica" data-category="Igiene">Carta
+                        Igienica</button>
+                </div>
+            </div>
+
+            <div class="shopping-list-card" style="margin-top: 20px;">
+                <div class="shopping-header-row">
+                    <h3>Articoli da acquistare (<span id="shopping-count">0</span>)</h3>
+                    <button type="button" id="btn-clear-shopping" class="btn-clear-all"
+                        title="Elimina tutti gli articoli contrassegnati come acquistati">Pulisci Spesa</button>
+                </div>
+
+                <div class="shopping-filter-row" id="shopping-filter-bar">
+                    <button class="filter-chip active" data-filter="all">Tutti</button>
+                    <button class="filter-chip" data-filter="Alimentari">Alimentari</button>
+                    <button class="filter-chip" data-filter="Bevande">Bevande</button>
+                    <button class="filter-chip" data-filter="Casa">Casa</button>
+                    <button class="filter-chip" data-filter="Igiene">Igiene</button>
+                </div>
+
+                <ul class="shopping-list" id="shopping-list-items">
+                    <!-- Popolato dinamicamente da JS -->
+                </ul>
+
+                <!-- FORM DI AGGIUNTA VELOCE IN LINEA COMPLETO -->
+                <form id="shopping-form" class="shopping-inline-add" onsubmit="event.preventDefault();"
+                    style="margin-top: 20px;">
+                    <div class="shopping-add-grid">
+                        <div class="input-group">
+                            <input type="text" id="input-shopping-item" placeholder="Articolo (es. Latte, Pane...)"
+                                required autocomplete="off"
+                                style="width: 100%; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; outline: none; color: var(--text-primary);">
+                        </div>
+                        <div class="input-group select-wrapper">
+                            <select id="select-shopping-category"
+                                style="width: 100%; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; outline: none; color: var(--text-primary); cursor: pointer;">
+                                <option value="Alimentari">Alimentari</option>
+                                <option value="Bevande">Bevande</option>
+                                <option value="Casa">Casa</option>
+                                <option value="Igiene">Igiene</option>
+                                <option value="Altro">Altro</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <input type="number" id="input-shopping-qty" placeholder="Q.tà" value="1" min="1" max="99"
+                                style="width: 100%; text-align: center; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; outline: none; color: var(--text-primary);">
+                        </div>
+                        <div class="input-group">
+                            <input type="text" id="input-shopping-notes" placeholder="Note / Marca" autocomplete="off"
+                                style="width: 100%; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; outline: none; color: var(--text-primary);">
+                        </div>
+                        <button type="submit" class="btn-add-shopping"
+                            style="width: 44px; height: 44px; border-radius: 12px; font-size: 1.4rem; padding: 0; display: flex; align-items: center; justify-content: center; font-weight: 500;">+</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- MODAL ONBOARDING UTENTE -->
+        <div id="modal-onboarding" class="modal-overlay">
+            <div class="modal-card" style="max-width: 460px;">
+                <!-- STEP 1: PRESENTAZIONE -->
+                <div id="onboarding-step-1" class="onboarding-step">
+                    <div class="auth-header" style="margin-bottom: 20px;">
+                        <div class="auth-logo" style="background: linear-gradient(135deg, #ffd07d 0%, #ff9e22 100%); color: white; box-shadow: 0 8px 16px -4px rgba(230, 126, 34, 0.25);">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                            </svg>
+                        </div>
+                        <h2>Benvenuto nel tuo Hub</h2>
+                        <p>Uno spazio unico per organizzare la tua giornata.</p>
+                    </div>
+
+                    <div class="onboarding-features" style="margin: 20px 0; text-align: left; display: flex; flex-direction: column; gap: 16px;">
+                        <div style="display: flex; gap: 12px; align-items: flex-start;">
+                            <span style="font-size: 1.4rem;">🛒</span>
+                            <div>
+                                <h4 style="margin: 0; font-weight: 600; font-size: 0.95rem;">Spesa Organizzata</h4>
+                                <p style="margin: 2px 0 0; font-size: 0.85rem; color: var(--text-secondary);">Crea liste, dividi i prodotti per reparto e spuntali in tempo reale.</p>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 12px; align-items: flex-start;">
+                            <span style="font-size: 1.4rem;">🏋️</span>
+                            <div>
+                                <h4 style="margin: 0; font-weight: 600; font-size: 0.95rem;">Allenamenti e Schede</h4>
+                                <p style="margin: 2px 0 0; font-size: 0.85rem; color: var(--text-secondary);">Traccia esercizi, set, carichi e usa il timer per i tempi di recupero.</p>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 12px; align-items: flex-start;">
+                            <span style="font-size: 1.4rem;">📅</span>
+                            <div>
+                                <h4 style="margin: 0; font-weight: 600; font-size: 0.95rem;">Calendario Impegni</h4>
+                                <p style="margin: 2px 0 0; font-size: 0.85rem; color: var(--text-secondary);">Pianifica appuntamenti mensili e giornalieri in modo pulito.</p>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 12px; align-items: flex-start;">
+                            <span style="font-size: 1.4rem;">⏱️</span>
+                            <div>
+                                <h4 style="margin: 0; font-weight: 600; font-size: 0.95rem;">Timeline Focus</h4>
+                                <p style="margin: 2px 0 0; font-size: 0.85rem; color: var(--text-secondary);">Organizza le tue ore con il Time-Blocking per massimizzare la produttività.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" id="btn-onboarding-next" class="btn-save" style="width: 100%; justify-content: center; padding: 14px; margin-top: 10px;">Continua</button>
+                </div>
+
+                <!-- STEP 2: CONFIGURAZIONE -->
+                <div id="onboarding-step-2" class="onboarding-step" style="display: none;">
+                    <div class="auth-header" style="margin-bottom: 24px;">
+                        <div class="auth-logo" style="background: linear-gradient(135deg, #a8c0ff 0%, #3f2b96 100%); color: white;">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <h2>Personalizziamo l'Hub</h2>
+                        <p>Inserisci i tuoi dettagli per completare la configurazione.</p>
+                    </div>
+
+                    <form id="onboarding-form" class="settings-form" onsubmit="event.preventDefault();">
+                        <div class="settings-group" style="margin-bottom: 20px;">
+                            <div class="settings-item" style="display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 16px;">
+                                <label for="onboarding-username" style="font-weight: 600;">Come ti chiami?</label>
+                                <input type="text" id="onboarding-username" placeholder="Inserisci il tuo nome" required autocomplete="off"
+                                    style="width: 100%; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 12px 16px; border-radius: 14px; font-size: 0.95rem; outline: none; color: var(--text-primary);">
+                            </div>
+                            
+                            <div class="settings-item" style="display: flex; flex-direction: column; align-items: flex-start; gap: 8px;">
+                                <label for="onboarding-theme" style="font-weight: 600;">Tema Visivo Preferito</label>
+                                <div class="select-wrapper" style="width: 100%;">
+                                    <select id="onboarding-theme" style="width: 100%; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 12px 16px; border-radius: 14px; font-size: 0.95rem; outline: none; color: var(--text-primary); appearance: none;">
+                                        <option value="light">Tema Chiaro</option>
+                                        <option value="dark">Tema Scuro</option>
+                                        <option value="neon-blue">Tema Neon Blu</option>
+                                        <option value="sunset-glow">Tema Sunset Glow</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 12px; margin-top: 10px;">
+                            <button type="button" id="btn-onboarding-back" class="btn-save" style="background: rgba(255, 255, 255, 0.2); color: var(--text-primary); border: 1px solid var(--glass-border); box-shadow: none; flex: 1;">Indietro</button>
+                            <button type="submit" id="btn-onboarding-submit" class="btn-save" style="flex: 2; justify-content: center;">Inizia!</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL IMPOSTAZIONI PROFILO -->
+        <div id="modal-profilo" class="modal-overlay">
+            <div class="modal-card">
+                <button class="btn-close-modal" id="btn-close-profile" title="Chiudi Impostazioni">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+
+                <h2>Impostazioni Profilo</h2>
+
+                <div class="profile-container">
+                    <div class="profile-preview-card">
+                        <div class="profile-preview-avatar" id="avatar-preview"
+                            style="display: flex; align-items: center; justify-content: center; font-weight: 700; color: white;">
+                        </div>
+                        <h3 id="preview-name">Utente</h3>
+                        <p id="preview-theme-sub">Tema Standard</p>
+                    </div>
+
+                    <form class="settings-form" id="settings-form" onsubmit="event.preventDefault();">
+                        <div class="settings-group">
+                            <h3>Dati Personali</h3>
+                            <div class="settings-item">
+                                <label for="input-username">Nome</label>
+                                <input type="text" id="input-username" placeholder="Inserisci il tuo nome"
+                                    autocomplete="off">
+                            </div>
+                            <div class="settings-item">
+                                <label for="select-avatar">Colore Profilo</label>
+                                <div class="select-wrapper">
+                                    <select id="select-avatar">
+                                        <option value="blue">Grigio Blu</option>
+                                        <option value="green">Verde Smeraldo</option>
+                                        <option value="purple">Viola Reale</option>
+                                        <option value="orange">Arancione Tramonto</option>
+                                        <option value="red">Rosso Corallo</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="settings-group">
+                            <h3>Aspetto e Tema</h3>
+                            <div class="settings-item">
+                                <label for="select-theme">Tema Visivo</label>
+                                <div class="select-wrapper">
+                                    <select id="select-theme">
+                                        <option value="light">Chiaro</option>
+                                        <option value="dark">Scuro</option>
+                                        <option value="neon-blue">Neon Blu</option>
+                                        <option value="sunset-glow">Sunset</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="settings-item range-item">
+                                <div class="slider-label-row">
+                                    <label for="range-blur">Sfocatura Glass (Blur)</label>
+                                    <span id="val-blur">40px</span>
+                                </div>
+                                <input type="range" id="range-blur" min="0" max="60" value="40" step="1">
+                            </div>
+                        </div>
+
+                        <div class="settings-group">
+                            <h3>Widget Attivi</h3>
+                            <div class="settings-item">
+                                <label for="toggle-weather">Meteo (24°C Sereno)</label>
+                                <label class="switch">
+                                    <input type="checkbox" id="toggle-weather" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            <div class="settings-item">
+                                <label for="toggle-tasks">Task di Oggi</label>
+                                <label class="switch">
+                                    <input type="checkbox" id="toggle-tasks" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            <div class="settings-item">
+                                <label for="toggle-events">Impegni Calendario</label>
+                                <label class="switch">
+                                    <input type="checkbox" id="toggle-events" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            <div class="settings-item">
+                                <label for="toggle-shopping">Lista della Spesa</label>
+                                <label class="switch">
+                                    <input type="checkbox" id="toggle-shopping" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            <div class="settings-item">
+                                <label for="toggle-workout">Schede Palestra</label>
+                                <label class="switch">
+                                    <input type="checkbox" id="toggle-workout" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="settings-group">
+                            <h3>Preferenze</h3>
+                            <div class="settings-item">
+                                <label for="select-unit">Unità Temperatura</label>
+                                <div class="select-wrapper">
+                                    <select id="select-unit">
+                                        <option value="C">Celsius (°C)</option>
+                                        <option value="F">Fahrenheit (°F)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 12px; margin-top: 10px;">
+                            <button type="button" id="btn-save-settings" class="btn-save" style="flex: 1;">Salva Impostazioni</button>
+                            <button type="button" id="btn-logout" class="btn-save" style="background: rgba(255, 59, 48, 0.1); color: #ff3b30; border: 1px solid rgba(255, 59, 48, 0.2); box-shadow: none; flex: 1;">Disconnetti</button>
+                        </div>
+                        <button type="button" id="btn-delete-account" class="btn-save" style="width: 100%; margin-top: 10px; background: rgba(255, 59, 48, 0.05); color: #ff3b30; border: 1px solid rgba(255, 59, 48, 0.25); box-shadow: none;">Elimina Account</button>
+                        <div style="margin-top: 16px; text-align: center; font-size: 0.72rem; opacity: 0.7;">
+                            <a href="#" class="link-open-legal" style="color: var(--apple-blue); text-decoration: underline;">Termini e Privacy Policy</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL INFORMATIVA LEGALE E PRIVACY -->
+        <div id="modal-legal" class="modal-overlay">
+            <div class="modal-card" style="max-height: 80vh; overflow-y: auto; text-align: left; padding: 24px;">
+                <button class="btn-close-modal" id="btn-close-legal" title="Chiudi Informativa">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+                <h2 style="margin-bottom: 16px; font-size: 1.3rem;">Privacy Policy & Termini</h2>
+                <div style="font-size: 0.88rem; line-height: 1.5; color: var(--text-primary); display: flex; flex-direction: column; gap: 14px;">
+                    <p>Questa informativa descrive in modo semplice e trasparente come gestiamo i tuoi dati all'interno del tuo Hub Personale.</p>
+                    
+                    <div>
+                        <strong style="color: var(--apple-blue); display: block; margin-bottom: 4px;">1. Gestione e Salvataggio Dati</strong>
+                        <span>Tutti i tuoi dati (impegni, eventi, liste spesa, schede allenamento) sono memorizzati localmente nel tuo browser (LocalStorage). Se utilizzi la sincronizzazione cloud, i dati vengono associati in modo sicuro al tuo ID utente all'interno del database cloud Supabase.</span>
+                    </div>
+
+                    <div>
+                        <strong style="color: var(--apple-blue); display: block; margin-bottom: 4px;">2. Cookie e Tracciamento</strong>
+                        <span>Non utilizziamo alcun cookie di profilazione, marketing o strumenti di tracciamento di terze parti (come Google Analytics). L'app fa uso esclusivamente dello spazio di archiviazione locale del browser per consentire il corretto funzionamento delle funzionalità dell'Hub.</span>
+                    </div>
+
+                    <div>
+                        <strong style="color: var(--apple-blue); display: block; margin-bottom: 4px;">3. Eliminazione e Controllo</strong>
+                        <span>I dati sono interamente sotto il tuo controllo. Puoi eliminare definitivamente tutti i dati e cancellare il tuo account in qualsiasi momento direttamente dalle impostazioni del tuo profilo ("Elimina Account").</span>
+                    </div>
+
+                    <div>
+                        <strong style="color: var(--apple-blue); display: block; margin-bottom: 4px;">4. Termini Generali</strong>
+                        <span>L'applicazione è fornita così com'è per uso personale ed organizzativo. Per qualsiasi domanda, puoi fare riferimento all'amministratore dell'applicazione.</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-save" id="btn-agree-legal" style="width: 100%; margin-top: 24px; padding: 10px; text-align: center; justify-content: center;">Ho Capito</button>
+            </div>
+        </div>
+
+        <!-- MODAL DETTAGLI METEO -->
+        <div id="modal-meteo" class="modal-overlay">
+            <div class="modal-card detail-modal">
+                <button class="btn-close-modal" id="btn-close-meteo" title="Chiudi">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+                <h2>Dettagli Meteo</h2>
+
+                <!-- Barra di Ricerca Località -->
+                <div class="weather-search-box" style="margin-bottom: 20px; display: flex; gap: 8px;">
+                    <input type="text" id="weather-search-input" placeholder="Cerca una città (es. Milano, Roma, Tokyo...)" style="flex: 1; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; outline: none; color: var(--text-primary);">
+                    <button id="btn-weather-search" class="btn-save" style="padding: 10px 18px; margin: 0; white-space: nowrap;">Cerca</button>
+                </div>
+                <div id="weather-search-error" style="display: none; font-size: 0.85rem; color: #ff3b30; margin-bottom: 12px; font-weight: 500;"></div>
+
+                <div class="weather-detail-container">
+                    <div class="weather-now-card">
+                        <div class="weather-now-icon" id="weather-detail-icon" style="font-size: 3rem; display: flex; align-items: center; justify-content: center;">
+                            ☀️
+                        </div>
+                        <div class="weather-now-info">
+                            <div class="weather-large-temp" id="weather-detail-temp">--°C</div>
+                            <div class="weather-desc-row">
+                                <span class="weather-desc-main" id="weather-detail-desc">Caricamento...</span>
+                                <span class="weather-desc-sub" id="weather-detail-city">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="weather-grid">
+                        <div class="weather-metric">
+                            <span class="metric-label">Percepita</span>
+                            <span class="metric-value" id="weather-detail-percepita">--°C</span>
+                        </div>
+                        <div class="weather-metric">
+                            <span class="metric-label">Umidità</span>
+                            <span class="metric-value" id="weather-detail-umidita">--%</span>
+                        </div>
+                        <div class="weather-metric">
+                            <span class="metric-label">Vento</span>
+                            <span class="metric-value" id="weather-detail-vento">-- km/h</span>
+                        </div>
+                        <div class="weather-metric">
+                            <span class="metric-label">Indice UV</span>
+                            <span class="metric-value" id="weather-detail-uv">--</span>
+                        </div>
+                    </div>
+
+                    <div class="weather-forecast">
+                        <h3>Previsioni Orarie</h3>
+                        <div class="forecast-timeline">
+                            <div class="forecast-hour">
+                                <span class="hour-time" id="forecast-time-1">--:--</span>
+                                <span class="hour-icon" id="forecast-icon-1">--</span>
+                                <span class="hour-temp" id="forecast-temp-1">--°C</span>
+                            </div>
+                            <div class="forecast-hour">
+                                <span class="hour-time" id="forecast-time-2">--:--</span>
+                                <span class="hour-icon" id="forecast-icon-2">--</span>
+                                <span class="hour-temp" id="forecast-temp-2">--°C</span>
+                            </div>
+                            <div class="forecast-hour">
+                                <span class="hour-time" id="forecast-time-3">--:--</span>
+                                <span class="hour-icon" id="forecast-icon-3">--</span>
+                                <span class="hour-temp" id="forecast-temp-3">--°C</span>
+                            </div>
+                            <div class="forecast-hour">
+                                <span class="hour-time" id="forecast-time-4">--:--</span>
+                                <span class="hour-icon" id="forecast-icon-4">--</span>
+                                <span class="hour-temp" id="forecast-temp-4">--°C</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL DETTAGLI TASK -->
+        <div id="modal-tasks" class="modal-overlay">
+            <div class="modal-card detail-modal">
+                <button class="btn-close-modal" id="btn-close-tasks" title="Chiudi">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+                <h2>I tuoi Task di Oggi</h2>
+
+                <div class="tasks-detail-container">
+                    <div class="tasks-summary-bar">
+                        <span>Hai completato <strong id="tasks-completed-count">1</strong> su <strong
+                                id="tasks-total-count">3</strong> task</span>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" id="tasks-progress-fill" style="width: 33%"></div>
+                        </div>
+                    </div>
+
+                    <ul class="task-list-group" id="task-list-items">
+                        <!-- Popolato dinamicamente da JS -->
+                    </ul>
+
+                    <form class="add-task-row" id="add-task-form" onsubmit="event.preventDefault();">
+                        <input type="text" id="input-new-task" placeholder="Aggiungi un nuovo task..."
+                            autocomplete="off" required>
+                        <button type="submit" class="btn-add-task">Aggiungi</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL DETTAGLI IMPEGNI -->
+        <div id="modal-events" class="modal-overlay">
+            <div class="modal-card detail-modal">
+                <button class="btn-close-modal" id="btn-close-events" title="Chiudi">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+                <h2>Impegni di Oggi</h2>
+
+                <div class="events-detail-container">
+                    <div class="events-timeline" id="events-timeline-list">
+                        <!-- Popolato dinamicamente da JS -->
+                    </div>
+
+                    <form class="add-event-form" id="add-event-form" onsubmit="event.preventDefault();">
+                        <h3>Aggiungi un Impegno</h3>
+                        <div class="form-row">
+                            <input type="text" id="input-event-title" placeholder="Nome dell'impegno..." required
+                                autocomplete="off">
+                        </div>
+                        <div class="form-row flex-row">
+                            <input type="time" id="input-event-time" required>
+                            <button type="submit" class="btn-add-event">Aggiungi</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!-- MODAL DETTAGLI SPESA (PILLOLA HOME) -->
+        <div id="modal-shopping-detail" class="modal-overlay">
+            <div class="modal-card detail-modal">
+                <button class="btn-close-modal" id="btn-close-shopping-detail" title="Chiudi">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+                <h2 id="modal-shopping-list-name">Spesa Attiva</h2>
+
+                <div class="tasks-detail-container">
+                    <div class="tasks-summary-bar bar-shopping">
+                        <span>Hai spuntato <strong id="modal-shopping-completed-count">0</strong> su <strong
+                                id="modal-shopping-total-count">0</strong> articoli</span>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" id="modal-shopping-progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <ul class="task-list-group" id="modal-shopping-list-items"
+                        style="max-height: 280px; overflow-y: auto;">
+                        <!-- Popolato dinamicamente da JS -->
+                    </ul>
+
+                    <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+                        <button type="button" class="btn-save" id="btn-modal-open-full-spesa"
+                            style="padding: 10px 20px; border-radius: 12px;">Apri Gestione Spesa Completa</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL DETTAGLIO ALLENAMENTO (PILLOLA HOME) -->
+        <div id="modal-workout-detail" class="modal-overlay">
+            <div class="modal-card detail-modal">
+                <button class="btn-close-modal" id="btn-close-workout-detail" title="Chiudi Dettaglio">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+                <h2 id="modal-workout-sheet-name" style="margin-bottom: 4px;">Scheda Allenamento</h2>
+                <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px;">
+                    <label for="select-widget-workout-sheet"
+                        style="font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.03em;">Seleziona
+                        Scheda</label>
+                    <div class="select-wrapper">
+                        <select id="select-widget-workout-sheet"
+                            style="width: 100%; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 10px; font-size: 0.9rem; outline: none; color: var(--text-primary); cursor: pointer;">
+                            <!-- Popolato da JS -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="tasks-detail-container">
+                    <div class="tasks-summary-bar"
+                        style="display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 14px;">
+                        <span>Esercizi pianificati: <strong id="modal-workout-total-count">0</strong></span>
+                        <button type="button" class="btn-primary" id="btn-widget-start-workout"
+                            style="font-size: 0.8rem; font-weight: 600; padding: 6px 12px; border-radius: 8px; border: none; background: #34c759; color: white; cursor: pointer;">Inizia</button>
+                    </div>
+
+                    <ul class="task-list-group" id="modal-workout-list-items"
+                        style="max-height: 280px; overflow-y: auto;">
+                        <!-- Esercizi della scheda attiva popolati da JS -->
+                    </ul>
+
+                    <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+                        <button type="button" class="btn-save" id="btn-modal-open-full-palestra"
+                            style="padding: 10px 20px; border-radius: 12px;">Apri Gestione Allenamenti</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL NUOVA SPESA -->
+        <div id="modal-nuova-spesa" class="modal-overlay">
+            <div class="modal-card detail-modal">
+                <button class="btn-close-modal" id="btn-close-nuova-spesa" title="Chiudi">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+                <h2>Nuova Lista Spesa</h2>
+
+                <form class="settings-form" id="new-list-form" onsubmit="event.preventDefault();">
+                    <div class="settings-group">
+                        <h3>Dati Lista</h3>
+                        <div class="settings-item">
+                            <label for="input-new-list-name">Nome Lista</label>
+                            <input type="text" id="input-new-list-name"
+                                placeholder="Es. Spesa Settimanale, Spesa Weekend" required autocomplete="off">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-save">Crea Lista Spesa</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL CRONOLOGIA SPESA -->
+        <div id="modal-cronologia-spesa" class="modal-overlay">
+            <div class="modal-card detail-modal">
+                <button class="btn-close-modal" id="btn-close-cronologia" title="Chiudi">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+                <h2>Cronologia Liste Spesa</h2>
+
+                <div class="history-timeline" id="history-list-timeline">
+                    <!-- Popolato dinamicamente da JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL MODIFICA ARTICOLO SPESA -->
+        <div id="modal-modifica-articolo" class="modal-overlay">
+            <div class="modal-card detail-modal">
+                <button class="btn-close-modal" id="btn-close-modifica" title="Chiudi">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+                <h2>Modifica Articolo</h2>
+
+                <form class="settings-form" id="edit-item-form" onsubmit="event.preventDefault();">
+                    <input type="hidden" id="input-edit-item-id">
+                    <div class="settings-group">
+                        <h3>Dettagli Articolo</h3>
+                        <div class="settings-item">
+                            <label for="input-edit-item-name">Articolo</label>
+                            <input type="text" id="input-edit-item-name" required autocomplete="off">
+                        </div>
+                        <div class="settings-item">
+                            <label for="select-edit-item-category">Categoria</label>
+                            <div class="select-wrapper">
+                                <select id="select-edit-item-category">
+                                    <option value="Alimentari">Alimentari</option>
+                                    <option value="Bevande">Bevande</option>
+                                    <option value="Casa">Casa</option>
+                                    <option value="Igiene">Igiene</option>
+                                    <option value="Altro">Altro</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="settings-item">
+                            <label for="input-edit-item-qty">Pezzi / Q.tà</label>
+                            <input type="number" id="input-edit-item-qty" min="1" max="99" required>
+                        </div>
+                        <div class="settings-item">
+                            <label for="input-edit-item-notes">Note / Marca</label>
+                            <input type="text" id="input-edit-item-notes" placeholder="Es. Senza lattosio, marca X"
+                                autocomplete="off">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-save">Salva Modifiche</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL SESSIONE ATTIVA ALLENAMENTO -->
+        <div id="modal-workout-session" class="modal-overlay">
+            <div class="modal-card detail-modal" style="max-width: 600px; width: 95%;">
+                <button class="btn-close-modal" id="btn-close-workout-session" title="Chiudi Allenamento">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+                <h2 id="session-workout-name">Allenamento in corso</h2>
+                <p id="session-workout-date"
+                    style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 20px;">Sessione del
+                    dd/mm/yyyy</p>
+
+                <div class="workout-session-exercises" id="session-exercises-list"
+                    style="max-height: 400px; overflow-y: auto; padding-right: 6px; display: flex; flex-direction: column; gap: 20px;">
+                    <!-- Esercizi con righe per ciascun set popolati dinamicamente -->
+                </div>
+
+                <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button class="btn-clear-all" id="btn-cancel-workout-session"
+                        style="padding: 10px 18px; border-radius: 12px; font-weight: 600; cursor: pointer;">Annulla</button>
+                    <button class="btn-save" id="btn-finish-workout-session"
+                        style="padding: 10px 24px; border-radius: 12px; font-weight: 600; background: #34c759; color: #fff; cursor: pointer; border: none;">Termina
+                        Allenamento</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL NUOVA SCHEDA ALLENAMENTO -->
+        <div id="modal-nuova-scheda" class="modal-overlay">
+            <div class="modal-card">
+                <button class="btn-close-modal" id="btn-close-nuova-scheda" title="Chiudi">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+                <h2>Nuova Scheda Allenamento</h2>
+                <form id="new-sheet-form" onsubmit="event.preventDefault();" style="margin-top: 20px;">
+                    <div class="settings-item" style="margin-bottom: 20px;">
+                        <label for="input-new-sheet-name">Nome Scheda</label>
+                        <input type="text" id="input-new-sheet-name" placeholder="es. Scheda A - Spinta" required
+                            autocomplete="off"
+                            style="width: 100%; background: rgba(255, 255, 255, 0.4); border: 1px solid var(--glass-border); padding: 12px; border-radius: 12px; font-size: 0.95rem; outline: none; color: var(--text-primary);">
+                    </div>
+                    <button type="submit" class="btn-save" style="width: 100%;">Crea Scheda</button>
+                </form>
+            </div>
+        </div>
+        <!-- BARRA FLOTTANTE ALLENAMENTO IN CORSO -->
+        <div id="workout-active-bar" class="active-workout-bar" style="display: none; cursor: pointer;">
+            <div class="active-workout-bar-content">
+                <div class="active-workout-bar-left">
+                    <span class="active-workout-dot" style="animation: pulse 1.5s infinite ease-in-out;"></span>
+                    <span>Allenamento in corso: <strong id="active-workout-bar-name">Scheda A</strong></span>
+                </div>
+                <button type="button" class="btn-active-workout-open">Apri</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="js/settings.js" defer></script>
+    <script src="js/auth.js" defer></script>
+    <script src="js/spesa.js" defer></script>
+    <script src="js/palestra.js" defer></script>
+    <script src="js/calendario.js" defer></script>
+    <script src="js/focus.js" defer></script>
+    <script src="js/omnibar.js" defer></script>
+    <script src="js/meteo.js" defer></script>
+    <script src="script.js" defer></script>
+</body>
+
+</html>

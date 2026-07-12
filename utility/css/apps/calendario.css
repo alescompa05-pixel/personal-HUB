@@ -1,0 +1,206 @@
+/* =========================================
+   CALENDARIO INTELLIGENTE STYLE SYSTEM
+   ========================================= */
+.calendar-layout-container {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 24px;
+    align-items: start;
+    margin-top: 20px;
+}
+
+.calendar-card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: var(--shadow-soft);
+}
+
+.calendar-month-selector {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#calendar-current-month-year {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.calendar-grid-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.calendar-days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+}
+
+.calendar-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 550;
+    color: var(--text-primary);
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.calendar-day:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.theme-dark .calendar-day:hover,
+.theme-neon-blue .calendar-day:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.calendar-day.empty {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.calendar-day.today {
+    border: 2px solid var(--apple-blue);
+}
+
+.calendar-day.active {
+    background: var(--apple-blue) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 10px rgba(0, 122, 255, 0.2);
+}
+
+.calendar-day.active .event-dot {
+    background: #fff !important;
+}
+
+.event-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--apple-blue);
+    position: absolute;
+    bottom: 6px;
+}
+
+.theme-dark .event-dot,
+.theme-neon-blue .event-dot {
+    background: var(--apple-blue);
+}
+
+.link-badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 6px;
+    display: inline-block;
+    width: max-content;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-left: 10px;
+}
+
+.link-badge:hover {
+    transform: scale(1.05);
+}
+
+.link-badge.link-spesa {
+    background: rgba(52, 199, 89, 0.08);
+    color: #34c759;
+}
+
+.link-badge.link-palestra {
+    background: rgba(0, 122, 255, 0.08);
+    color: #007aff;
+}
+
+.theme-dark .link-badge.link-spesa,
+.theme-neon-blue .link-badge.link-spesa {
+    background: rgba(52, 199, 89, 0.15);
+    color: #30d158;
+}
+
+.theme-dark .link-badge.link-palestra,
+.theme-neon-blue .link-badge.link-palestra {
+    background: rgba(10, 132, 255, 0.15);
+    color: #0a84ff;
+}
+
+.link-badge.badge-lavoro {
+    background: rgba(0, 122, 255, 0.08);
+    color: #007aff;
+    cursor: default;
+}
+.link-badge.badge-studio {
+    background: rgba(142, 68, 173, 0.08);
+    color: #8e44ad;
+    cursor: default;
+}
+.link-badge.badge-salute {
+    background: rgba(231, 76, 60, 0.08);
+    color: #e74c3c;
+    cursor: default;
+}
+.link-badge.badge-personale {
+    background: rgba(26, 188, 156, 0.08);
+    color: #1abc9c;
+    cursor: default;
+}
+.link-badge.badge-tempo-libero {
+    background: rgba(243, 156, 18, 0.08);
+    color: #f39c12;
+    cursor: default;
+}
+
+.theme-dark .link-badge.badge-lavoro,
+.theme-neon-blue .link-badge.badge-lavoro {
+    background: rgba(10, 132, 255, 0.15);
+    color: #0a84ff;
+}
+.theme-dark .link-badge.badge-studio,
+.theme-neon-blue .link-badge.badge-studio {
+    background: rgba(155, 89, 182, 0.15);
+    color: #bf5af2;
+}
+.theme-dark .link-badge.badge-salute,
+.theme-neon-blue .link-badge.badge-salute {
+    background: rgba(255, 69, 58, 0.15);
+    color: #ff453a;
+}
+.theme-dark .link-badge.badge-personale,
+.theme-neon-blue .link-badge.badge-personale {
+    background: rgba(48, 209, 88, 0.15);
+    color: #30d158;
+}
+.theme-dark .link-badge.badge-tempo-libero,
+.theme-neon-blue .link-badge.badge-tempo-libero {
+    background: rgba(255, 159, 10, 0.15);
+    color: #ff9f0a;
+}
+
+@media (max-width: 768px) {
+    .calendar-layout-container {
+        grid-template-columns: 1fr;
+    }
+}
