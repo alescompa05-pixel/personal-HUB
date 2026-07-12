@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
         syncLeisureToCalendar();
         
         if (typeof window.syncData === 'function') {
-            window.syncData('leisure_planner', 'upsert', leisureData);
+            window.syncData('leisure_planner');
         }
     }
 
@@ -70,6 +70,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // INTEGRAZIONE CALENDARIO & TIMELINE GIORNALIERA
     // =============================================
     function syncLeisureToCalendar() {
+        // Ricarica i dati aggiornati (es. se sincronizzati da cloud)
+        leisureData = JSON.parse(localStorage.getItem('hub-leisure-data')) || { trips: [] };
+
         if (!window.events) window.events = [];
 
         // Rimuovi tutti i precedenti eventi del Travel Planner
@@ -182,6 +185,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // =============================================
     function renderTrips() {
         if (!travelPlansList) return;
+        
+        // Ricarica i dati aggiornati (es. se sincronizzati da cloud)
+        leisureData = JSON.parse(localStorage.getItem('hub-leisure-data')) || { trips: [] };
+        
         travelPlansList.innerHTML = '';
 
         if (!leisureData.trips || leisureData.trips.length === 0) {
