@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputFocusBlockStart = document.getElementById('input-focus-block-start');
     const inputFocusBlockEnd = document.getElementById('input-focus-block-end');
     const selectFocusBlockCategory = document.getElementById('select-focus-block-category');
+    const inputFocusBlockNotes = document.getElementById('input-focus-block-notes');
     
     const focusLinkSpesaGroup = document.getElementById('focus-link-spesa-group');
     const selectFocusLinkSpesa = document.getElementById('select-focus-link-spesa');
@@ -57,15 +58,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (btnFocusCalendar && focusDatePicker) {
-        btnFocusCalendar.addEventListener('click', () => {
-            focusDatePicker.showPicker ? focusDatePicker.showPicker() : focusDatePicker.click();
-        });
-        
+    if (focusDatePicker) {
         focusDatePicker.addEventListener('change', (e) => {
             if (e.target.value) {
                 focusSelectedDate = e.target.value;
                 updateFocusPageForDate();
+                focusDatePicker.blur();
             }
         });
     }
@@ -262,10 +260,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `;
             } else {
+                const notesHtml = event.notes ? `<div class="timeline-block-notes" style="font-size: 0.75rem; opacity: 0.85; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; color: inherit; line-height: 1.2;">${event.notes}</div>` : '';
                 block.innerHTML = `
                     <span class="timeline-block-time">${event.time}${event.endTime ? ` - ${event.endTime}` : ''}</span>
-                    <span class="timeline-block-title">${event.title}</span>
+                    <span class="timeline-block-title" style="display: block;">${event.title}</span>
                     ${badgeHtml}
+                    ${notesHtml}
                     <div style="position: absolute; right: 8px; top: 6px; display: flex; gap: 6px; align-items: center; color: inherit;">
                         <button class="btn-edit-block" data-id="${event.id}" title="Modifica blocco" style="background: transparent; border: none; cursor: pointer; color: inherit; display: flex; align-items: center; justify-content: center; width: 18px; height: 18px;">
                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
@@ -454,6 +454,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetFocusForm() {
         if (focusAddBlockForm) delete focusAddBlockForm.dataset.editingId;
         inputFocusBlockTitle.value = '';
+        if (inputFocusBlockNotes) inputFocusBlockNotes.value = '';
         
         // Imposta orario iniziale predefinito (fine dell'ultimo blocco o 09:00)
         inputFocusBlockStart.value = '09:00';
@@ -477,6 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
         inputFocusBlockTitle.value = event.title;
         inputFocusBlockStart.value = event.time;
         inputFocusBlockEnd.value = event.endTime || '';
+        if (inputFocusBlockNotes) inputFocusBlockNotes.value = event.notes || '';
 
         const type = event.linkedType || 'generic';
         selectFocusBlockCategory.value = type;
@@ -509,6 +511,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const startVal = inputFocusBlockStart.value;
             const endVal = inputFocusBlockEnd.value;
             const type = selectFocusBlockCategory.value;
+            const notes = inputFocusBlockNotes ? inputFocusBlockNotes.value.trim() : '';
 
             if (title && startVal && endVal) {
                 let linkedType = null;
@@ -535,6 +538,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             title: title,
                             time: startVal,
                             endTime: endVal,
+                            notes: notes,
                             linkedType: linkedType,
                             linkedId: linkedId
                         };
@@ -548,6 +552,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         time: startVal,
                         endTime: endVal,
                         date: focusSelectedDate,
+                        notes: notes,
                         linkedType: linkedType,
                         linkedId: linkedId,
                         allDay: false

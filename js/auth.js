@@ -441,7 +441,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 end_date: payload.endDate || null,
                 all_day: !!payload.allDay,
                 linked_type: payload.linkedType || null,
-                linked_id: payload.linkedId || null
+                linked_id: payload.linkedId || null,
+                notes: payload.notes || null
             };
         }
         if (type === 'shopping_lists') {
@@ -728,7 +729,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     endDate: ev.end_date,
                     allDay: ev.all_day,
                     linkedType: ev.linked_type,
-                    linkedId: ev.linked_id
+                    linkedId: ev.linked_id,
+                    notes: ev.notes || ''
                 }));
                 const localEvents = JSON.parse(localStorage.getItem('hub-events')) || [];
                 const lastSynced = window.lastSyncedEvents || [];
