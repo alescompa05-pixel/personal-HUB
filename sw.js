@@ -21,7 +21,8 @@ const ASSETS = [
   './js/focus.js',
   './js/meteo.js',
   './js/omnibar.js',
-  './js/settings.js'
+  './js/settings.js',
+  './js/share.js'
 ];
 
 // Installa il Service Worker e memorizza in cache gli asset principali
