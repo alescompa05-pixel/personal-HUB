@@ -199,6 +199,16 @@
     color: #ff9f0a;
 }
 
+.link-badge.link-viaggio {
+    background: rgba(255, 149, 0, 0.08);
+    color: #ff9500;
+}
+.theme-dark .link-badge.link-viaggio,
+.theme-neon-blue .link-badge.link-viaggio {
+    background: rgba(255, 159, 10, 0.15);
+    color: #ff9f0a;
+}
+
 @media (max-width: 768px) {
     .calendar-layout-container {
         grid-template-columns: 1fr;

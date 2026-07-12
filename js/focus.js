@@ -18,8 +18,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const focusStatisticsContainer = document.getElementById('focus-statistics-container');
     const focusPendingTasksList = document.getElementById('focus-pending-tasks-list');
 
+    // Helper per formattare la data come YYYY-MM-DD in fuso locale
+    function formatDateAsYYYYMMDD(date) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+
+    // Helper per analizzare YYYY-MM-DD in un oggetto Date locale
+    function parseYYYYMMDD(dateStr) {
+        const parts = dateStr.split('-');
+        return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    }
+
     // Nuovi controlli data per la timeline
-    let focusSelectedDate = new Date().toISOString().split('T')[0];
+    let focusSelectedDate = formatDateAsYYYYMMDD(new Date());
     const btnFocusPrevDay = document.getElementById('btn-focus-prev-day');
     const btnFocusNextDay = document.getElementById('btn-focus-next-day');
     const btnFocusCalendar = document.getElementById('btn-focus-calendar');
@@ -28,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateFocusPageForDate() {
         if (focusTodayDateLabel) {
             const options = { weekday: 'long', day: 'numeric', month: 'long' };
-            const dateObj = new Date(focusSelectedDate + 'T00:00:00');
+            const dateObj = parseYYYYMMDD(focusSelectedDate);
             const dataStr = dateObj.toLocaleDateString('it-IT', options);
             focusTodayDateLabel.textContent = dataStr.charAt(0).toUpperCase() + dataStr.slice(1);
         }
@@ -42,18 +56,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (btnFocusPrevDay) {
         btnFocusPrevDay.addEventListener('click', () => {
-            const d = new Date(focusSelectedDate + 'T00:00:00');
+            const d = parseYYYYMMDD(focusSelectedDate);
             d.setDate(d.getDate() - 1);
-            focusSelectedDate = d.toISOString().split('T')[0];
+            focusSelectedDate = formatDateAsYYYYMMDD(d);
             updateFocusPageForDate();
         });
     }
 
     if (btnFocusNextDay) {
         btnFocusNextDay.addEventListener('click', () => {
-            const d = new Date(focusSelectedDate + 'T00:00:00');
+            const d = parseYYYYMMDD(focusSelectedDate);
             d.setDate(d.getDate() + 1);
-            focusSelectedDate = d.toISOString().split('T')[0];
+            focusSelectedDate = formatDateAsYYYYMMDD(d);
             updateFocusPageForDate();
         });
     }
@@ -68,9 +82,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    if (btnFocusCalendar && focusDatePicker) {
+        btnFocusCalendar.addEventListener('click', () => {
+            if (typeof focusDatePicker.showPicker === 'function') {
+                focusDatePicker.showPicker();
+            } else {
+                focusDatePicker.click();
+            }
+        });
+    }
+
     window.initFocusPage = function() {
         // Ripristina la data odierna all'apertura principale della sezione
-        focusSelectedDate = new Date().toISOString().split('T')[0];
+        focusSelectedDate = formatDateAsYYYYMMDD(new Date());
         updateFocusPageForDate();
 
         const now = new Date();
@@ -103,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateFocusLiveLine() {
         if (!focusLiveLine) return;
         const now = new Date();
-        const curDateStr = now.toISOString().split('T')[0];
+        const curDateStr = formatDateAsYYYYMMDD(now);
         
         if (curDateStr !== focusSelectedDate) {
             focusLiveLine.style.display = 'none';
@@ -296,6 +320,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         window.renderShopping();
                     }
                     window.switchPage('spesa');
+                } else if (event.linkedType === 'viaggio' && event.linkedId) {
+                    if (typeof window.openTripDetail === 'function') {
+                        window.openTripDetail(event.linkedId);
+                    }
+                    window.switchPage('viaggi');
                 } else if (event.linkedType === 'allenamento' && event.linkedId) {
                     window.activeSheetId = event.linkedId;
                     if (typeof window.saveWorkouts === 'function') window.saveWorkouts();

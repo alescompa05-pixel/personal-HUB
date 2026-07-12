@@ -288,6 +288,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (typeof window.renderWorkoutSheets === 'function') window.renderWorkoutSheets();
                 if (typeof window.renderActiveWorkoutSheet === 'function') window.renderActiveWorkoutSheet();
                 window.switchPage('palestra');
+            } else if (type === 'viaggio') {
+                if (typeof window.openTripDetail === 'function') {
+                    window.openTripDetail(id);
+                }
+                window.switchPage('viaggi');
             }
             // Chiudi i modali aperti
             const modalEventsDetail = document.getElementById('modal-events-detail');
@@ -332,6 +337,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     const sheet = window.workoutSheets.find(s => s.id === event.linkedId);
                     const name = sheet ? sheet.name : 'Scheda';
                     linkHtml = `<span class="link-badge link-palestra" data-type="palestra" data-id="${event.linkedId}" title="Apri Scheda Palestra">${name}</span>`;
+                } else if (event.linkedType === 'viaggio') {
+                    const localData = JSON.parse(localStorage.getItem('hub-leisure-data')) || { trips: [] };
+                    const tr = localData.trips.find(t => t.id === event.linkedId);
+                    const name = tr ? tr.destination : 'Viaggio';
+                    linkHtml = `<span class="link-badge link-viaggio" data-type="viaggio" data-id="${event.linkedId}" title="Apri Viaggio">${name}</span>`;
                 } else if (event.linkedType && event.linkedType !== 'generic') {
                     const labels = {
                         'lavoro': 'Lavoro',

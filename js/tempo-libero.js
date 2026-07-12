@@ -102,7 +102,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 allDay: true,
                 category: "svago",
                 notes: `Viaggio pianificato a ${trip.destination}.`,
-                origin: 'travel-planner'
+                origin: 'travel-planner',
+                linkedType: 'viaggio',
+                linkedId: trip.id
             });
 
             // 2. Evento per ciascuna attività dell'itinerario giorno per giorno
@@ -117,7 +119,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         category: "svago",
                         notes: act.notes || '',
                         origin: 'travel-planner',
-                        tripId: trip.id
+                        tripId: trip.id,
+                        linkedType: 'viaggio',
+                        linkedId: trip.id
                     });
                 });
             }
@@ -712,6 +716,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // =============================================
     // INIZIALIZZAZIONE VISTE
     // =============================================
+    window.openTripDetail = function(tripId) {
+        leisureData = JSON.parse(localStorage.getItem('hub-leisure-data')) || { trips: [] };
+        const trip = leisureData.trips.find(t => t.id === tripId);
+        if (trip) {
+            activeTripId = trip.id;
+            openTripDetailModal(trip);
+            if (modalTripDetail) {
+                modalTripDetail.classList.add('active');
+            }
+        }
+    }
+
     window.renderTrips = renderTrips;
     renderTrips();
     // Forza la sincronizzazione iniziale degli eventi salvati nel calendario
